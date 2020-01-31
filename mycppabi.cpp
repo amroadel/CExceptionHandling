@@ -3,12 +3,15 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+// definition for a name space used in the ABI from cxxabi.h
 namespace __cxxabiv1 {
+    // mock definition for the clasa implemented in cxxabi.h. Originally it inherits from std::type_info
     struct __class_type_info {
         virtual void foo() {}
     } ti;
 }
 
+// the exception is being allocated as an array of this size
 #define EXCEPTION_BUFF_SIZE 255
 char exception_buff[EXCEPTION_BUFF_SIZE];
 
@@ -26,6 +29,7 @@ void __cxa_free_exception(void *thrown_exception);
 
 #include <unwind.h>
 
+// type definitions for function pointers that return void and takes void as a parameter. The original definition doesn't take any parameters in exception headeer under std
 typedef void (*unexpected_handler)(void);
 typedef void (*terminate_handler)(void);
 
@@ -46,10 +50,12 @@ struct __cxa_exception {
 	_Unwind_Exception	unwindHeader;
 };
 
+// void (*dest)(void*) is a pointer to a function. The passed function should handle the destruction of the created exception
 void __cxa_throw(void* thrown_exception, struct type_info *tinfo, void (*dest)(void*))
 {
     printf("__cxa_throw called\n");
 
+    // thrown_exception pointer is being decremented for some reason. Need to check why?? TODO
     __cxa_exception *header = ((__cxa_exception *) thrown_exception - 1);
     _Unwind_RaiseException(&header->unwindHeader);
 
@@ -71,7 +77,7 @@ void __cxa_end_catch()
 
 
 
-
+// Review the content of the header a bit more it's still uncertain
 struct LSDA_Header {
     uint8_t lsda_start_encoding;
     uint8_t lsda_type_encoding;
@@ -92,12 +98,15 @@ struct LSDA_Call_Site {
         cs_action = ptr[3];
     }
 
+    // in order: the start of the call site, its length, start of the landing pad, and the offset to the action table
     uint8_t cs_start;
     uint8_t cs_len;
     uint8_t cs_lp;
     uint8_t cs_action;
 };
 
+// context contains info about the current stack frame including lsda and is system defined
+// _Unwind_Reason_Code is a predefined enum
 _Unwind_Reason_Code __gxx_personality_v0 (
                      int version, _Unwind_Action actions, uint64_t exceptionClass,
                      _Unwind_Exception* unwind_exception, _Unwind_Context* context)
