@@ -1,3 +1,4 @@
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,8 +51,9 @@ struct __cxa_exception {
 	_Unwind_Exception	unwindHeader;
 };
 
-// void (*dest)(void*) is a pointer to a function. The passed function should handle the destruction of the created exception
-void __cxa_throw(void* thrown_exception, struct type_info *tinfo, void (*dest)(void*))
+void __cxa_throw(void* thrown_exception,
+                 struct type_info *tinfo,
+                 void (*dest)(void*))
 {
     printf("__cxa_throw called\n");
 
@@ -77,39 +79,86 @@ void __cxa_end_catch()
 
 
 
-// Review the content of the header a bit more it's still uncertain
+
+/**********************************************/
+
+/**
+ * The LSDA is a read only place in memory; we'll create a typedef for
+ * this to avoid a const mess later on; LSDA_ptr refers to readonly and
+ * &LSDA_ptr will be a non-const pointer to a const place in memory
+ */
+typedef const uint8_t* LSDA_ptr;
+
 struct LSDA_Header {
-    uint8_t lsda_start_encoding;
-    uint8_t lsda_type_encoding;
-    uint8_t lsda_call_site_table_length;
+    /**
+     * Read the LSDA table into a struct; advances the lsda pointer
+     * as many bytes as read
+     */
+    LSDA_Header(LSDA_ptr *lsda) {
+        LSDA_ptr read_ptr = *lsda;
+
+        // Copy the LSDA fields
+        start_encoding = read_ptr[0];
+        type_encoding = read_ptr[1];
+        ttype = read_ptr[2];
+
+        // Advance the lsda pointer
+        *lsda = read_ptr + sizeof(LSDA_Header);
+    }
+
+    uint8_t start_encoding;
+    uint8_t type_encoding;
+    uint8_t ttype;
 };
 
-struct LSDA_Call_Site_Header {
+struct LSDA_CS_Header {
+    // Same as other LSDA constructors
+    LSDA_CS_Header(LSDA_ptr *lsda) {
+        LSDA_ptr read_ptr = *lsda;
+        encoding = read_ptr[0];
+        length = read_ptr[1];
+        *lsda = read_ptr + sizeof(LSDA_CS_Header);
+    }
+
     uint8_t encoding;
     uint8_t length;
 };
 
-struct LSDA_Call_Site {
-    
-    LSDA_Call_Site(const uint8_t *ptr) {
-        cs_start = ptr[0];
-        cs_len = ptr[1];
-        cs_lp = ptr[2];
-        cs_action = ptr[3];
+struct LSDA_CS {
+    // Same as other LSDA constructors
+    LSDA_CS(LSDA_ptr *lsda) {
+        LSDA_ptr read_ptr = *lsda;
+        start = read_ptr[0];
+        len = read_ptr[1];
+        lp = read_ptr[2];
+        action = read_ptr[3];
+        *lsda = read_ptr + sizeof(LSDA_CS);
     }
 
-    // in order: the start of the call site, its length, start of the landing pad, and the offset to the action table
-    uint8_t cs_start;
-    uint8_t cs_len;
-    uint8_t cs_lp;
-    uint8_t cs_action;
+    // Note start, len and lp would be void*'s, but they are actually relative
+    // addresses: start and lp are relative to the start of the function, len
+    // is relative to start
+ 
+    // Offset into function from which we could handle a throw
+    uint8_t start;
+    // Length of the block that might throw
+    uint8_t len;
+    // Landing pad
+    uint8_t lp;
+    // Offset into action table + 1 (0 means no action)
+    // Used to run destructors
+    uint8_t action;
 };
 
-// context contains info about the current stack frame including lsda and is system defined
-// _Unwind_Reason_Code is a predefined enum
+/**********************************************/
+
+
 _Unwind_Reason_Code __gxx_personality_v0 (
-                     int version, _Unwind_Action actions, uint64_t exceptionClass,
-                     _Unwind_Exception* unwind_exception, _Unwind_Context* context)
+                             int version,
+                             _Unwind_Action actions,
+                             uint64_t exceptionClass,
+                             _Unwind_Exception* unwind_exception,
+                             _Unwind_Context* context)
 {
     if (actions & _UA_SEARCH_PHASE)
     {
@@ -118,36 +167,38 @@ _Unwind_Reason_Code __gxx_personality_v0 (
     } else if (actions & _UA_CLEANUP_PHASE) {
         printf("Personality function, cleanup\n");
 
-        const uint8_t* lsda = (const uint8_t*)
-                                    _Unwind_GetLanguageSpecificData(context);
+        // Pointer to the beginning of the raw LSDA
+        LSDA_ptr lsda = (uint8_t*)_Unwind_GetLanguageSpecificData(context);
 
-        LSDA_Header *header = (LSDA_Header*)(lsda);
-        LSDA_Call_Site_Header *cs_header = (LSDA_Call_Site_Header*)
-                                                (lsda + sizeof(LSDA_Header));
+        // Read LSDA headerfor the LSDA
+        LSDA_Header header(&lsda);
 
-        size_t cs_in_table = cs_header->length / sizeof(LSDA_Call_Site);
+        // Read the LSDA CS header
+        LSDA_CS_Header cs_header(&lsda);
 
-        // We must declare cs_table_base as uint8, otherwise we risk an
-        // unaligned access
-        const uint8_t *cs_table_base = lsda + sizeof(LSDA_Header)
-                                            + sizeof(LSDA_Call_Site_Header);
+        // Calculate where the end of the LSDA CS table is
+        const LSDA_ptr lsda_cs_table_end = lsda + cs_header.length;
 
-        // Go through every entry on the call site table
-        for (size_t i=0; i < cs_in_table; ++i)
+        // Loop through each entry in the CS table
+        while (lsda < lsda_cs_table_end)
         {
-            const uint8_t *offset = &cs_table_base[i * sizeof(LSDA_Call_Site)];
-            LSDA_Call_Site cs(offset);
-            printf("Found a CS:\n");
-            printf("\tcs_start: %i\n", cs.cs_start);
-            printf("\tcs_len: %i\n", cs.cs_len);
-            printf("\tcs_lp: %i\n", cs.cs_lp);
-            printf("\tcs_action: %i\n", cs.cs_action);
+            LSDA_CS cs(&lsda);
+
+            if (cs.lp)
+            {
+                int r0 = __builtin_eh_return_data_regno(0);
+                int r1 = __builtin_eh_return_data_regno(1);
+
+                _Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
+                // Note the following code hardcodes the exception type;
+                // we'll fix that later on
+                _Unwind_SetGR(context, r1, (uintptr_t)(1));
+
+                uintptr_t func_start = _Unwind_GetRegionStart(context);
+                _Unwind_SetIP(context, func_start + cs.lp);
+                break;
+            }
         }
-
-        uintptr_t ip = _Unwind_GetIP(context);
-        uintptr_t funcStart = _Unwind_GetRegionStart(context);
-        uintptr_t ipOffset = ip - funcStart;
-
 
         return _URC_INSTALL_CONTEXT;
     } else {
@@ -157,6 +208,4 @@ _Unwind_Reason_Code __gxx_personality_v0 (
 }
 
 
-
 }
-
