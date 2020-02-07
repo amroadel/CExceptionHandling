@@ -167,6 +167,10 @@ _Unwind_Reason_Code __gxx_personality_v0 (
     } else if (actions & _UA_CLEANUP_PHASE) {
         printf("Personality function, cleanup\n");
 
+        // Calculate what the instruction pointer was just before the
+        // exception was thrown for this stack frame
+        uintptr_t throw_ip = _Unwind_GetIP(context) - 1;
+
         // Pointer to the beginning of the raw LSDA
         LSDA_ptr lsda = (uint8_t*)_Unwind_GetLanguageSpecificData(context);
 
@@ -184,20 +188,32 @@ _Unwind_Reason_Code __gxx_personality_v0 (
         {
             LSDA_CS cs(&lsda);
 
-            if (cs.lp)
-            {
-                int r0 = __builtin_eh_return_data_regno(0);
-                int r1 = __builtin_eh_return_data_regno(1);
+            // If there's no LP we can't handle this exception; move on
+            if (not cs.lp) continue;
 
-                _Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
-                // Note the following code hardcodes the exception type;
-                // we'll fix that later on
-                _Unwind_SetGR(context, r1, (uintptr_t)(1));
+            uintptr_t func_start = _Unwind_GetRegionStart(context);
 
-                uintptr_t func_start = _Unwind_GetRegionStart(context);
-                _Unwind_SetIP(context, func_start + cs.lp);
-                break;
-            }
+            // Calculate the range of the instruction pointer valid for this
+            // landing pad; if this LP can handle the current exception then
+            // the IP for this stack frame must be in this range
+            uintptr_t try_start = func_start + cs.start;
+            uintptr_t try_end = func_start + cs.start + cs.len;
+
+            // Check if this is the correct LP for the current try block
+            if (throw_ip < try_start) continue;
+            if (throw_ip > try_end) continue;
+
+            // We found a landing pad for this exception; resume execution
+            int r0 = __builtin_eh_return_data_regno(0);
+            int r1 = __builtin_eh_return_data_regno(1);
+
+            _Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
+            // Note the following code hardcodes the exception type;
+            // we'll fix that later on
+            _Unwind_SetGR(context, r1, (uintptr_t)(1));
+
+            _Unwind_SetIP(context, func_start + cs.lp);
+            break;
         }
 
         return _URC_INSTALL_CONTEXT;
@@ -206,6 +222,5 @@ _Unwind_Reason_Code __gxx_personality_v0 (
         return _URC_FATAL_PHASE1_ERROR;
     }
 }
-
 
 }

@@ -22,8 +22,14 @@ _Z5raisev:
 	.section	.rodata
 	.align 8
 .LC0:
-	.string	"try_but_dont_catch handled the exception"
+	.string	"Running a try which will never throw."
+	.align 8
 .LC1:
+	.string	"try_but_dont_catch handled the exception"
+	.align 8
+.LC2:
+	.string	"Exception caught... with the wrong catch!"
+.LC3:
 	.string	"Caught a Fake_Exception!"
 	.text
 	.globl	_Z18try_but_dont_catchv
@@ -41,39 +47,67 @@ _Z18try_but_dont_catchv:
 	pushq	%rbx
 	subq	$24, %rsp
 	.cfi_offset 3, -24
+	leaq	.LC0(%rip), %rdi
 .LEHB0:
-	call	_Z5raisev
+	call	puts@PLT
 .LEHE0:
 .L6:
-	leaq	.LC0(%rip), %rdi
 .LEHB1:
+	call	_Z5raisev
+.LEHE1:
+.L11:
+	leaq	.LC1(%rip), %rdi
+.LEHB2:
 	call	puts@PLT
-	jmp	.L10
-.L8:
+	jmp	.L17
+.L13:
 	cmpq	$1, %rdx
 	je	.L5
 	movq	%rax, %rdi
 	call	_Unwind_Resume@PLT
-.LEHE1:
+.LEHE2:
 .L5:
 	movq	%rax, %rdi
 	call	__cxa_begin_catch@PLT
-	movq	%rax, -24(%rbp)
-	leaq	.LC1(%rip), %rdi
-.LEHB2:
+	movq	%rax, -32(%rbp)
+	leaq	.LC2(%rip), %rdi
+.LEHB3:
 	call	puts@PLT
-.LEHE2:
+.LEHE3:
 	call	__cxa_end_catch@PLT
 	jmp	.L6
-.L9:
+.L14:
 	movq	%rax, %rbx
 	call	__cxa_end_catch@PLT
 	movq	%rbx, %rax
 	movq	%rax, %rdi
-.LEHB3:
+.LEHB4:
 	call	_Unwind_Resume@PLT
-.LEHE3:
+.L15:
+	cmpq	$1, %rdx
+	je	.L10
+	movq	%rax, %rdi
+	call	_Unwind_Resume@PLT
+.LEHE4:
 .L10:
+	movq	%rax, %rdi
+	call	__cxa_begin_catch@PLT
+	movq	%rax, -24(%rbp)
+	leaq	.LC3(%rip), %rdi
+.LEHB5:
+	call	puts@PLT
+.LEHE5:
+	call	__cxa_end_catch@PLT
+	jmp	.L11
+.L16:
+	movq	%rax, %rbx
+	call	__cxa_end_catch@PLT
+	movq	%rbx, %rax
+	movq	%rax, %rdi
+.LEHB6:
+	call	_Unwind_Resume@PLT
+.LEHE6:
+.L17:
 	addq	$24, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -94,18 +128,30 @@ _Z18try_but_dont_catchv:
 .LLSDACSB1:
 	.uleb128 .LEHB0-.LFB1
 	.uleb128 .LEHE0-.LEHB0
-	.uleb128 .L8-.LFB1
+	.uleb128 .L13-.LFB1
 	.uleb128 0x1
 	.uleb128 .LEHB1-.LFB1
 	.uleb128 .LEHE1-.LEHB1
-	.uleb128 0
-	.uleb128 0
+	.uleb128 .L15-.LFB1
+	.uleb128 0x1
 	.uleb128 .LEHB2-.LFB1
 	.uleb128 .LEHE2-.LEHB2
-	.uleb128 .L9-.LFB1
+	.uleb128 0
 	.uleb128 0
 	.uleb128 .LEHB3-.LFB1
 	.uleb128 .LEHE3-.LEHB3
+	.uleb128 .L14-.LFB1
+	.uleb128 0
+	.uleb128 .LEHB4-.LFB1
+	.uleb128 .LEHE4-.LEHB4
+	.uleb128 0
+	.uleb128 0
+	.uleb128 .LEHB5-.LFB1
+	.uleb128 .LEHE5-.LEHB5
+	.uleb128 .L16-.LFB1
+	.uleb128 0
+	.uleb128 .LEHB6-.LFB1
+	.uleb128 .LEHE6-.LEHB6
 	.uleb128 0
 	.uleb128 0
 .LLSDACSE1:
@@ -117,9 +163,9 @@ _Z18try_but_dont_catchv:
 	.text
 	.size	_Z18try_but_dont_catchv, .-_Z18try_but_dont_catchv
 	.section	.rodata
-.LC2:
+.LC4:
 	.string	"catchit handled the exception"
-.LC3:
+.LC5:
 	.string	"Caught an Exception!"
 	.text
 	.globl	_Z7catchitv
@@ -137,39 +183,57 @@ _Z7catchitv:
 	pushq	%rbx
 	subq	$24, %rsp
 	.cfi_offset 3, -24
-.LEHB4:
+.LEHB7:
 	call	_Z18try_but_dont_catchv
-.LEHE4:
-.L15:
-	leaq	.LC2(%rip), %rdi
-.LEHB5:
+.LEHE7:
+.L23:
+	leaq	.LC4(%rip), %rdi
+.LEHB8:
 	call	puts@PLT
-	jmp	.L19
-.L17:
+	jmp	.L29
+.L26:
 	cmpq	$1, %rdx
-	je	.L14
+	je	.L21
+	cmpq	$2, %rdx
+	je	.L22
 	movq	%rax, %rdi
 	call	_Unwind_Resume@PLT
-.LEHE5:
-.L14:
+.LEHE8:
+.L21:
 	movq	%rax, %rdi
 	call	__cxa_begin_catch@PLT
 	movq	%rax, -24(%rbp)
 	leaq	.LC3(%rip), %rdi
-.LEHB6:
+.LEHB9:
 	call	puts@PLT
-.LEHE6:
+.LEHE9:
 	call	__cxa_end_catch@PLT
-	jmp	.L15
-.L18:
+	jmp	.L23
+.L22:
+	movq	%rax, %rdi
+	call	__cxa_begin_catch@PLT
+	movq	%rax, -32(%rbp)
+	leaq	.LC5(%rip), %rdi
+.LEHB10:
+	call	puts@PLT
+.LEHE10:
+	call	__cxa_end_catch@PLT
+	jmp	.L23
+.L27:
 	movq	%rax, %rbx
 	call	__cxa_end_catch@PLT
 	movq	%rbx, %rax
 	movq	%rax, %rdi
-.LEHB7:
+.LEHB11:
 	call	_Unwind_Resume@PLT
-.LEHE7:
-.L19:
+.L28:
+	movq	%rax, %rbx
+	call	__cxa_end_catch@PLT
+	movq	%rbx, %rax
+	movq	%rax, %rdi
+	call	_Unwind_Resume@PLT
+.LEHE11:
+.L29:
 	addq	$24, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -187,27 +251,34 @@ _Z7catchitv:
 	.byte	0x1
 	.uleb128 .LLSDACSE2-.LLSDACSB2
 .LLSDACSB2:
-	.uleb128 .LEHB4-.LFB2
-	.uleb128 .LEHE4-.LEHB4
-	.uleb128 .L17-.LFB2
-	.uleb128 0x1
-	.uleb128 .LEHB5-.LFB2
-	.uleb128 .LEHE5-.LEHB5
-	.uleb128 0
-	.uleb128 0
-	.uleb128 .LEHB6-.LFB2
-	.uleb128 .LEHE6-.LEHB6
-	.uleb128 .L18-.LFB2
-	.uleb128 0
 	.uleb128 .LEHB7-.LFB2
 	.uleb128 .LEHE7-.LEHB7
+	.uleb128 .L26-.LFB2
+	.uleb128 0x3
+	.uleb128 .LEHB8-.LFB2
+	.uleb128 .LEHE8-.LEHB8
+	.uleb128 0
+	.uleb128 0
+	.uleb128 .LEHB9-.LFB2
+	.uleb128 .LEHE9-.LEHB9
+	.uleb128 .L27-.LFB2
+	.uleb128 0
+	.uleb128 .LEHB10-.LFB2
+	.uleb128 .LEHE10-.LEHB10
+	.uleb128 .L28-.LFB2
+	.uleb128 0
+	.uleb128 .LEHB11-.LFB2
+	.uleb128 .LEHE11-.LEHB11
 	.uleb128 0
 	.uleb128 0
 .LLSDACSE2:
-	.byte	0x1
+	.byte	0x2
 	.byte	0
+	.byte	0x1
+	.byte	0x7d
 	.align 4
 	.long	DW.ref._ZTI9Exception-.
+	.long	DW.ref._ZTI14Fake_Exception-.
 .LLSDATT2:
 	.text
 	.size	_Z7catchitv, .-_Z7catchitv
