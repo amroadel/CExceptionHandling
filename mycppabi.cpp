@@ -4,15 +4,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-// definition for a name space used in the ABI from cxxabi.h
 namespace __cxxabiv1 {
-    // mock definition for the clasa implemented in cxxabi.h. Originally it inherits from std::type_info
     struct __class_type_info {
         virtual void foo() {}
     } ti;
 }
 
-// the exception is being allocated as an array of this size
 #define EXCEPTION_BUFF_SIZE 255
 char exception_buff[EXCEPTION_BUFF_SIZE];
 
@@ -31,7 +28,6 @@ void __cxa_free_exception(void *thrown_exception);
 #include <unwind.h>
 #include <typeinfo>
 
-// type definitions for function pointers that return void and takes void as a parameter. The original definition doesn't take any parameters in exception headeer under std
 typedef void (*unexpected_handler)(void);
 typedef void (*terminate_handler)(void);
 
@@ -58,7 +54,6 @@ void __cxa_throw(void* thrown_exception,
 {
     printf("__cxa_throw called\n");
 
-    // thrown_exception pointer is being decremented for some reason. Need to check why?? TODO
     __cxa_exception *header = ((__cxa_exception *) thrown_exception - 1);
 
     _Unwind_RaiseException(&header->unwindHeader);
@@ -89,30 +84,10 @@ void __cxa_end_catch()
  * this to avoid a const mess later on; LSDA_ptr refers to readonly and
  * &LSDA_ptr will be a non-const pointer to a const place in memory
  */
-
-typedef const _uleb128_t* LSDA_ptr;
+typedef const uint8_t* LSDA_ptr;
 typedef _uleb128_t LSDA_line;
 
-// __uint128_t dec_uleb128_old(LSDA_ptr &lsda) {
-//     LSDA_line result = 0;
-//     uint8_t shift = 0;
-//     uint8_t uleb_byte = 0;
-//     int i = 0;
-//     while (true) {
-//         LSDA_ptr read_ptr = lsda;
-//         uleb_byte = (uint8_t)read_ptr[0];
-//         result |= (0x7f & uleb_byte) << shift;
-//         lsda += sizeof(uint8_t);
-//         printf("%i\n",read_ptr);
-//         if ((uleb_byte >> 7) == 0)
-//             break;
-//         shift += 7;
-//         i++;
-//     }
-//     return result;
-// }
-
-static const unsigned char *
+const unsigned char *
 dec_uleb128 (const unsigned char *p, _uleb128_t *val)
 {
   unsigned int shift = 0;
@@ -130,31 +105,49 @@ dec_uleb128 (const unsigned char *p, _uleb128_t *val)
   return p;
 }
 
+// This function recieves a pointer to a ttype entry and return the corrisponding type_info
+// It's an implementation of three different functions from unwind-pe.h specific to our case and cannot be generalized for different encoding and size
+const std::type_info *
+get_ttype_entry (uint8_t* entry)
+{
+    const int32_t *u = (const int32_t *) entry;
+    unsigned long result;
+
+    result = *u + (unsigned long)u;
+	entry += 4;
+    result = *(unsigned long *)result;
+    
+    const std::type_info *tinfo = reinterpret_cast<const std::type_info *>(result);
+    return tinfo;
+}
+
 struct LSDA_Header {
     /**
      * Read the LSDA table into a struct; advances the lsda pointer
      * as many bytes as read
      */
     LSDA_Header(LSDA_ptr *lsda) {
-        //LSDA_ptr read_ptr = *lsda;
+        // LSDA_ptr read_ptr = *lsda;
 
-        // Copy the LSDA fields
+        // // Copy the LSDA fields
         // start_encoding = read_ptr[0];
         // type_encoding = read_ptr[1];
         // type_table_offset = read_ptr[2];
 
+        // // Advance the lsda pointer
+        // *lsda = read_ptr + sizeof(LSDA_Header);
+
+        // Modified version of read for compatability with decodoing function
         const unsigned char *read_ptr = (const unsigned char *)*lsda;
-        read_ptr = dec_uleb128(read_ptr, &start_encoding);
-        read_ptr = dec_uleb128(read_ptr, &type_encoding);
+        start_encoding = read_ptr[0];
+        type_encoding = read_ptr[1];
+        read_ptr += 2;
         read_ptr = dec_uleb128(read_ptr, &type_table_offset);
         *lsda = (LSDA_ptr)read_ptr;
-
-        // Advance the lsda pointer
-        //*lsda = read_ptr + sizeof(LSDA_Header);
     }
 
-    LSDA_line start_encoding;
-    LSDA_line type_encoding;
+    uint8_t start_encoding;
+    uint8_t type_encoding;
 
     // This is the offset, from the end of the header, to the types table
     LSDA_line type_table_offset;
@@ -163,39 +156,40 @@ struct LSDA_Header {
 struct LSDA_CS_Header {
     // Same as other LSDA constructors
     LSDA_CS_Header(LSDA_ptr *lsda) {
-        //LSDA_ptr read_ptr = *lsda;
-        //encoding = read_ptr[0];
-        //length = read_ptr[1];
+        // LSDA_ptr read_ptr = *lsda;
+        // encoding = read_ptr[0];
+        // length = read_ptr[1];
+        // *lsda = read_ptr + sizeof(LSDA_CS_Header);
 
+        // Modified version of read for compatability with decodoing function
         const unsigned char *read_ptr = (const unsigned char *)*lsda;
-        read_ptr = dec_uleb128(read_ptr, &encoding);
+        encoding = read_ptr[0];
+        read_ptr += 1;
         read_ptr = dec_uleb128(read_ptr, &length);
         *lsda = (LSDA_ptr)read_ptr;
-
-        //*lsda = read_ptr + sizeof(LSDA_CS_Header);
     }
 
-    LSDA_line encoding;
+    uint8_t encoding;
     LSDA_line length;
 };
 
 struct LSDA_CS {
     // Same as other LSDA constructors
     LSDA_CS(LSDA_ptr *lsda) {
-        //LSDA_ptr read_ptr = *lsda;
+        // LSDA_ptr read_ptr = *lsda;
         // start = read_ptr[0];
         // len = read_ptr[1];
         // lp = read_ptr[2];
-        //action = read_ptr[3];
+        // action = read_ptr[3];
+        // *lsda = read_ptr + sizeof(LSDA_CS);
 
+        // Modified version of read for compatability with decodoing function
         const unsigned char *read_ptr = (const unsigned char *)*lsda;
         read_ptr = dec_uleb128(read_ptr, &start);
         read_ptr = dec_uleb128(read_ptr, &len);
         read_ptr = dec_uleb128(read_ptr, &lp);
         read_ptr = dec_uleb128(read_ptr, &action);
         *lsda = (LSDA_ptr)read_ptr;
-
-        //*lsda = read_ptr + sizeof(LSDA_CS);
     }
 
     LSDA_CS() { }
@@ -248,7 +242,8 @@ struct LSDA
         // Get the start of the types table (it's actually the end of the
         // table, but since the action index will hold a negative index
         // for this table we can say it's the beginning
-        types_table_start( (const void**)(raw_lsda + header.type_table_offset) ),
+        // modified the pointer size for pointer arthemitics
+        types_table_start( (const void**)((uint8_t*)raw_lsda + header.type_table_offset) ),
 
         // Read the LSDA CS header
         cs_header(&raw_lsda),
@@ -257,7 +252,8 @@ struct LSDA
         cs_table_start(raw_lsda),
 
         // Calculate where the end of the LSDA CS table is
-        cs_table_end(raw_lsda + cs_header.length),
+        // Pointer Arth. has been changed to accomodate the lareger pointer type
+        cs_table_end((const LSDA_ptr)((uint8_t*)(raw_lsda) + cs_header.length)),
 
         // Get the start of action tables
         action_tbl_start( cs_table_end )
@@ -313,75 +309,88 @@ _Unwind_Reason_Code __gxx_personality_v0 (
         // Create an object to hide some part of the LSDA processing
         LSDA lsda(raw_lsda);
 
-        // Go through every entry on the call site table
-        int i = 0;
-        for (const LSDA_CS *cs = lsda.next_call_site_entry(true);
-            cs != NULL;
-            cs = lsda.next_call_site_entry())
-        {
-            printf("Found a CS #%i:\n", i);
-            printf("\tcs_start: %i\n", cs->start);
-            printf("\tcs_len: %i\n", cs->len);
-            printf("\tcs_lp: %i\n", cs->lp);
-            printf("\tcs_action: %i\n", cs->action);
-            i++;
-        }
-
         // Go through each call site in this stack frame to check whether
         // the current exception can be handled here
-        // for(const LSDA_CS *cs = lsda.next_call_site_entry(true);
-        //         cs != NULL;
-        //         cs = lsda.next_call_site_entry())
+        /* 
+         * This loop produces a segmentation fault error due to accesing a wrong memory location
+         * This happens probably because the LSDA entries are read without proper decoding so until we fix it, it will remain preceded by these nice //
+         */
+        for(const LSDA_CS *cs = lsda.next_call_site_entry(true);
+                cs != NULL;
+                cs = lsda.next_call_site_entry())
+        {
+            // If there's no landing pad we can't handle this exception
+            if (not cs->lp) continue;
+
+            uintptr_t func_start = _Unwind_GetRegionStart(context);
+
+            // Calculate the range of the instruction pointer valid for this
+            // landing pad; if this LP can handle the current exception then
+            // the IP for this stack frame must be in this range
+            uintptr_t try_start = func_start + cs->start;
+            uintptr_t try_end = func_start + cs->start + cs->len;
+
+            // Check if this is the correct LP for the current try block
+            if (throw_ip < try_start) continue;
+            if (throw_ip > try_end) continue;
+
+            // Get the offset into the action table for this LP
+            if (cs->action > 0)
+            {
+                // cs->action is the offset + 1; that way cs->action == 0
+                // means there is no associated entry in the action table
+                const size_t action_offset = cs->action - 1;
+                const LSDA_ptr action = lsda.action_tbl_start + action_offset;
+
+                // For a landing pad with a catch the action table will
+                // hold an index to a list of types
+                // the 4 is the size of the .long data that stores types in ttable
+                int type_index = 4 * action[0];
+
+                uint8_t* catch_type_info = (uint8_t*)lsda.types_table_start;
+                catch_type_info -= type_index;
+                // void** catch_type_info_void = (void**)catch_type_info_byte;
+                // const void* catch_type_info = (const void*)(catch_type_info_void[0]);
+                const std::type_info *catch_ti = get_ttype_entry(catch_type_info);
+                printf("%s\n", catch_ti->name());
+            }
+
+            // We found a landing pad for this exception; resume execution
+            int r0 = __builtin_eh_return_data_regno(0);
+            int r1 = __builtin_eh_return_data_regno(1);
+
+            _Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
+
+            // Note the following code hardcodes the exception type;
+            // we'll fix that later on
+            _Unwind_SetGR(context, r1, (uintptr_t)(1));
+
+            _Unwind_SetIP(context, func_start + cs->lp);
+            break;
+        }
+
+        // // This is used to print the values inside the headers
+        // printf("LSDA Header:\n");
+        // printf("\tstart_encoding: %i\n", lsda.header.start_encoding);
+        // printf("\ttype_encoding: %i\n", lsda.header.type_encoding);
+        // printf("\ttype_table_offset: %i\n", lsda.header.type_table_offset);
+
+        // printf("LSDA Call Site Header:\n");
+        // printf("\tencoding: %i\n", lsda.cs_header.encoding);
+        // printf("\tlength: %i\n", lsda.cs_header.length);
+
+        // //Now this one is a cute little for loop for accessing the Call Site table entries for debugging
+        // int i = 0;
+        // for (const LSDA_CS *cs = lsda.next_call_site_entry(true);
+        //     cs != NULL;
+        //     cs = lsda.next_call_site_entry())
         // {
-        //     // If there's no landing pad we can't handle this exception
-        //     if (not cs->lp) continue;
-
-        //     uintptr_t func_start = _Unwind_GetRegionStart(context);
-
-        //     // Calculate the range of the instruction pointer valid for this
-        //     // landing pad; if this LP can handle the current exception then
-        //     // the IP for this stack frame must be in this range
-        //     uintptr_t try_start = func_start + cs->start;
-        //     uintptr_t try_end = func_start + cs->start + cs->len;
-
-        //     // Check if this is the correct LP for the current try block
-        //     if (throw_ip < try_start) continue;
-        //     if (throw_ip > try_end) continue;
-
-        //     // Get the offset into the action table for this LP
-        //     if (cs->action > 0)
-        //     {
-        //         // cs->action is the offset + 1; that way cs->action == 0
-        //         // means there is no associated entry in the action table
-        //         const size_t action_offset = cs->action - 1;
-        //         const LSDA_ptr action = lsda.action_tbl_start + action_offset;
-
-        //         // For a landing pad with a catch the action table will
-        //         // hold an index to a list of types
-        //         int type_index = action[0];
-
-        //         // const void* catch_type_info = lsda.types_table_start;
-        //         // char* catch_type_info_char = (char*) catch_type_info;
-        //         // catch_type_info_char -= 4 * type_index;
-        //         // const void* catch_type_info_void = (const void*) catch_type_info_char;
-        //         //const std::type_info *catch_ti = (const std::type_info *) catch_type_info_void;
-        //         const void* catch_type_info = lsda.types_table_start[ -1 * type_index ];
-        //         const std::type_info *catch_ti = (const std::type_info *) catch_type_info;
-        //         printf("%s\n", catch_ti->name());
-        //     }
-
-        //     // We found a landing pad for this exception; resume execution
-        //     int r0 = __builtin_eh_return_data_regno(0);
-        //     int r1 = __builtin_eh_return_data_regno(1);
-
-        //     _Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
-
-        //     // Note the following code hardcodes the exception type;
-        //     // we'll fix that later on
-        //     _Unwind_SetGR(context, r1, (uintptr_t)(1));
-
-        //     _Unwind_SetIP(context, func_start + cs->lp);
-        //     break;
+        //     printf("Found a CS #%i:\n", i);
+        //     printf("\tcs_start: %i\n", cs->start);
+        //     printf("\tcs_len: %i\n", cs->len);
+        //     printf("\tcs_lp: %i\n", cs->lp);
+        //     printf("\tcs_action: %i\n", cs->action);
+        //     i++;
         // }
 
         return _URC_INSTALL_CONTEXT;
