@@ -42,7 +42,7 @@ Note the following abbriviations:
 |  | @TTBase | .uleb128 | .LLSDATT1-.LLSDATTD1 | type_table_start - call_site_table_start: offset to the type table from after the lsda header |
 |  | @CSTable_encoding | .byte | 0x1 | The encoding used in the call site table records (entries). In this case it's uleb128 |
 |  | @CSTable_size | .uleb128 | .LLSDACSE1-.LLSDACSB1 | call_site_table_end - call_site_table_start: call site table size. It's also the action table offset as it comes directly after cs table |
-| Call Site Records | @CS | .uleb128 | .LEHB0-.LFB1 | call_site_start - function_start: landing pad relative address (relative to @LPStar) |
+| Call Site Records | @CS | .uleb128 | .LEHB0-.LFB1 | call_site_start - function_start: call site relative address (relative to @LPStar) |
 |  | @CS_size | .uleb128 | .LEHE0-.LEHB0 | call_site_end - call_site_start: call site size |
 |  | @LP | .uleb128 | .L13-.LFB1 | landing_pad - @LPStart: relative address of the landing pad specific to this call site relative to @LPStart (or function start if omitted) |
 |  | @AT_offset | .uleb128 | 0x1 | offset from action_table_start to the proper handler of this call site from the action table (previous 2 values will be 0 in case of no handler) |
