@@ -48,7 +48,7 @@ Note the following abbriviations:
 |  | @AT_offset | .uleb128 | 0x1 | offset from action_table_start to the proper handler of this call site from the action table (previous 2 values will be 0 in case of no handler) |
 | ... | ... | ... | ... |  |
 | Action Table | @TT_offset | .byte | 0x1 | offset from type_table_start to the type handled by this landing pad |
-|  | @AR_offset | .byte | 0x7d | self relative offset to the next entry. although the size directive is byte, it's actually a leb128 encoded value (-3 is most cases) |
+|  | @AR_offset | .byte | 0x7d | self relative offset to the next entry. although the size directive is byte, it's actually a leb128 encoded value (-3 in most cases) |
 | ... | ... | ... | ... |  |
 |  | @TypeInfo_-2 | .long | DW.ref._ZTI9Exception-. | type table base is at the bottom and subsequent entries are accessed in reverse order by decrementing from the base |
 | Type Table | @TypeInfo_-1 | .long | DW.ref._ZTI14Fake_Exception-. | pc relative address to the type info |
@@ -59,11 +59,12 @@ Iterating the LSDA happens as follows:
 3. if the value falls in the call site range check the value of @LP for this call site record
 4. if it's zero then there is no handler, skip to the next call site record
 5. if it's non-zero check it's @AT_offset
-6. if it's zero then there is no action (skip the call site)
+6. if it's zero then (this is a special case we will discuss later)
 7. if it's non zero then jump to action_table_start[(@AT_offset-1)] and check the value of @TT_offset in this action record
 8. jump to type_tabel_start[-@TT_offset] and access the type info following the rules found in @TTBase_encoding
 9. if the type info matches the one thrown then you have found the appropriate handler in @LP
-10. if it doesn't then back to the action record check @AR_offset for the next action record relative offset, if it was zero then this is the end and you can't handle this exception with this landing pad (skip it)
+10. if it doesn't then back to the action record check @AR_offset for the next action record relative offset, if @AR_offset was zero then this is the end and you can't handle this exception with this landing pad (skip it)
+11. if you reached the end of the call site table then there is no handler in this frame, you either unwind again or terminate
 ### TTBase_encoding break down
 The info stored in @TTBase_encoding can be obtained by applying different masks  
 
