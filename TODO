@@ -1,0 +1,11 @@
+[ ] The ABI doesn't support inheritance
+[ ] __cxa_allocate needs to return a pointer at the end not the begining to ensure compatibility
+[ ] Remove commented code
+[ ] Comment changes for pull request code (remember -1)
+[ ] abi_v08/mycppabi.cpp:352 the 4 hardcodes the .long size fix it
+[x] abi_v09/mycppabi.cpp:333 why the +1 -1
+[ ] abi_v08/mycppabi.cpp:121 remove entry+4
+[ ] exception destuctors handling
+[x] handling catch all
+[ ] send an email to ikhalil@aucegypt.edu for the wiki tool
+[ ] edit the documentation (LPStart Description - TTBase Description - add assembly code - if AT_offset is zero, searching lsda step 6)

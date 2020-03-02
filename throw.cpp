@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include "throw.h"
 
+struct RAII {
+    int i;
+    RAII(int i) : i(i) { printf("RAII object %i has been built\n", i); }
+    ~RAII() { printf("RAII object %i has been destroyed\n", i); }
+};
+
 struct Fake_Exception {};
 
 void raise() {
@@ -8,11 +14,7 @@ void raise() {
 }
 
 void try_but_dont_catch() {
-    try {
-        printf("Running a try which will never throw.\n");
-    } catch(Fake_Exception&) {
-        printf("Exception caught... with the wrong catch!\n");
-    }
+    RAII x(1);
 
     try {
         raise();
