@@ -1,0 +1,6 @@
+lookup.*
+.vscode
+app
+
+*.o
+*.s
