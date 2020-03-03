@@ -8,12 +8,12 @@ https://github.com/nicolasbrailo/cpp_exception_handling_abi
 
 ## Table of content
 1. Research steps and issues found
-  - ULEB128 encoding
-  - Void* size
-  - Table type entries encoding
+   - ULEB128 encoding
+   - Void* size
+   - Table type entries encoding
 2. LSDA table break down
-  - Searching the LSDA for a handler
-  - TTBase_encoding break down
+   - Searching the LSDA for a handler
+   - TTBase_encoding break down
 
 ## Research steps and issues found
 The research in implementing a simplified ABI that can handle c++ exceptions firstly began by reviewing Brailovsky's blog. He tried to discover the minimum set of functions needed to have a working ABI by linking a throwing cpp file to a normal c file (because c doesn't have exception handling capabilities). He compiled the files on a x86 32 bit machine using gcc and added the missing functions required by the compiler one by one in a separate file of his making. The file contained functions originaly declared in libsupc++ (c++ support library) and were intended to solve the linking error of missing references as gcc dosn't have access to libsupc++. While it did solve the problem on the same environment, when trying on a x86 64 bit machine, segmentation fault error occures for various reasons starting from v08 that will be disscussed below.  
@@ -23,10 +23,53 @@ As mentioned in the blog (prior knowledge of the source code from the blog until
 ### Void* size
 After finding the correct handler from the call site table, the next step is accessing its related entry in the action table (and we can do this without a problem). The problem happens when we try jumping to the needed entry in the type table (basic understanding of the exception handling flow is required. An overview can be found later in the documen). Entries in type table are of type long and hold addresses to the needed data types (of type 'type_info') to check the thrown exception type. '.long' data type in x86 assembly (mostly anywhere actually) have a size of 4 bytes. The original source code iterated the table with the help of a simple void pointer and some pointer arthematics. ++1-ing a void pointer simply adds its size ('sizeof(void*)' which is 4 byte for 32 bit architicture) to the address contained in the pointer and this is how we access subsequent entries in the table, so far so good. Now when we go to a 64 bit machine, the size of the void* increases to 8 bytes but the entries are still spaced at 4 byte (because the .long size doesn't change with the architicture) and what happens is a troublsome out of bounds case. by modifying the mechanism of iteration (modifying the pointer size) we were able to access the correct address value. Now you would think that by jumping to this address we can have our required 'type_info', little did we know it wasn't that simple.
 ### Table type entries encoding
-In one of the earlier version when we first started reading the lsda, we came across a '.byte' entry that we ignored assuming that it holds unnecessary information about the encoding of the type table. Well, this seamingly innocent single byte value should be masked with 3 different values to get the appropriate size, encoding, and relative address base. Now the size and encoding were not a problem (well we already solved the size issue and the size directives made it clear that this is a 4 byte value). The relative address base on the other hand was wrongfully ignored. It was assumed in the blog that the adress was an absolute address to a location in the assembly code. It turns out it's a pc-relative address (relative to the location of the current entry to be exact) after tracing the eh-personality of the libsupc++ library. In order to get the correct address, just add the value found in the type table to the address of the value in the table (this was implemented in 'get_ttype_entry'). And there you have it, v08 now finally works on an x86_64 machine. We were hoping that propagating the changes to v12 would solve everything, but '__cxa_throw' function had another say in the matter. We are still in the process of debugging it.
+In one of the earlier version when we first started reading the lsda, we came across a '.byte' entry that we ignored assuming that it holds unnecessary information about the encoding of the type table. Well, this seamingly innocent single byte value should be masked with 3 different values to get the appropriate size, encoding, and relative address base. Now the size and encoding were not a problem (well we already solved the size issue and the size directives made it clear that this is a 4 byte value). The relative address base on the other hand was wrongfully ignored. It was assumed in the blog that the adress was an absolute address to a location in the assembly code. It turns out it's a pc-relative address (relative to the location of the current entry to be exact) after tracing the eh-personality of the libsupc++ library. In order to get the correct address, just add the value found in the type table to the address of the value in the table (this was implemented in 'get_ttype_entry'). And there you have it, v08 now finally works on an x86_64 machine. We were hoping that propagating the changes to v12 would solve everything, but '__cxa_throw' function had another say in the matter.
+### __cxa_throw 'thrown_exception' parameter
+If you jump all the way up to cxa_throw you will notice that there is a weird -1 (in the old version at least). This -1 moves the '\*header' up by the size of '__cxa_exception'. The only logicl reason you would need to do this is if the pointer '\*thrown_exception' that is passed to the function was pointing to the end of the struct and not the begining, but who decides where the pointer is? Well, it's '__cxa_allocate' but in our version it's normally pointing to the begining of the buffer that would be casted later on to a '__cxa_exception' type. So, all that we need is to remove the -1 and all will be good, right? Well actually this indeed solved the problem this time, but (there is always a but) the allocate method in gcc/libsupc++ responsible for exception handling sends the pointer at the end for some reason, so it's a good idea to follow it just in case some unwind function expects the '\*thrown_exception' to point at the end. Get the -1 back and make allocate point to the end of the buffer. And there you have it, your minimal working exception handling ABI.
 
 ## LSDA table break down
-In order to understand the exception handling process, a through understanding of the lsda area is a must. this section provides an insight on each field. The assembly code generated from the throw.cpp file in the blog is taken as an example  
+In order to understand the exception handling process, a through understanding of the lsda area is a must. this section provides an insight on each field. The assembly code below generated from the throw.cpp file in the blog is taken as an example  
+
+    .LFE2:
+      .section	.gcc_except_table
+      .align 4
+    .LLSDA2:
+      .byte	0xff
+      .byte	0x9b
+      .uleb128 .LLSDATT2-.LLSDATTD2
+    .LLSDATTD2:
+      .byte	0x1
+      .uleb128 .LLSDACSE2-.LLSDACSB2
+    .LLSDACSB2:
+      .uleb128 .LEHB7-.LFB2
+      .uleb128 .LEHE7-.LEHB7
+      .uleb128 .L26-.LFB2
+      .uleb128 0x3
+      .uleb128 .LEHB8-.LFB2
+      .uleb128 .LEHE8-.LEHB8
+      .uleb128 0
+      .uleb128 0
+      .uleb128 .LEHB9-.LFB2
+      .uleb128 .LEHE9-.LEHB9
+      .uleb128 .L27-.LFB2
+      .uleb128 0
+      .uleb128 .LEHB10-.LFB2
+      .uleb128 .LEHE10-.LEHB10
+      .uleb128 .L28-.LFB2
+      .uleb128 0
+      .uleb128 .LEHB11-.LFB2
+      .uleb128 .LEHE11-.LEHB11
+      .uleb128 0
+      .uleb128 0
+    .LLSDACSE2:
+      .byte	0x2
+      .byte	0
+      .byte	0x1
+      .byte	0x7d
+      .align 4
+      .long	DW.ref._ZTI9Exception-.
+      .long	DW.ref._ZTI14Fake_Exception-.
+
 Note the following abbriviations:  
 - @LP: landing pad
 - @TT: type table
@@ -37,9 +80,9 @@ Note the following abbriviations:
 | Section | Field Name | Size | Value(Example) | Description |
 |-------------------|--------------------|-----------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
 | LSDA Header | @LPStart_encoding | .byte | 0xff | The encoding used in the next field (0xff means omitted) |
-|  | @LPStart(optional) | (omitted) | (omitted) | The relative address base for entries (call sites) in the call site table (if removed, addresses will be relative to function start) |
+|  | @LPStart(optional) | (omitted) | (omitted) | The relative address base for entries (landing pads) in the call site table (if removed, addresses will be relative to function start) |
 |  | @TTBase_encoding | .byte | 0x9b | According to the mask applied, it can give other info about the stored entries (Mask in a separate table) |
-|  | @TTBase | .uleb128 | .LLSDATT1-.LLSDATTD1 | type_table_start - call_site_table_start: offset to the type table from after the lsda header |
+|  | @TTBase | .uleb128 | .LLSDATT1-.LLSDATTD1 | type_table_start - call_site_table_start: offset to the type table from @TTBase |
 |  | @CSTable_encoding | .byte | 0x1 | The encoding used in the call site table records (entries). In this case it's uleb128 |
 |  | @CSTable_size | .uleb128 | .LLSDACSE1-.LLSDACSB1 | call_site_table_end - call_site_table_start: call site table size. It's also the action table offset as it comes directly after cs table |
 | Call Site Records | @CS | .uleb128 | .LEHB0-.LFB1 | call_site_start - function_start: call site relative address (relative to function_start) |
@@ -59,10 +102,10 @@ Iterating the LSDA happens as follows:
 3. if the value falls in the call site range check the value of @LP for this call site record
 4. if it's zero then there is no handler, skip to the next call site record
 5. if it's non-zero check it's @AT_offset
-6. if it's zero then (this is a special case we will discuss later)
+6. if it's zero then this is a clean up handler (destructors and etc) that should be called in the clean up phase
 7. if it's non zero then jump to action_table_start[(@AT_offset-1)] and check the value of @TT_offset in this action record
 8. jump to type_tabel_start[-@TT_offset] and access the type info following the rules found in @TTBase_encoding
-9. if the type info matches the one thrown then you have found the appropriate handler in @LP
+9. if the type info matches the one thrown then you have found the appropriate handler in @LP (or if it's zero which represent a catch all)
 10. if it doesn't then back to the action record check @AR_offset for the next action record relative offset, if @AR_offset was zero then this is the end and you can't handle this exception with this landing pad (skip it)
 11. if you reached the end of the call site table then there is no handler in this frame, you either unwind again or terminate
 ### TTBase_encoding break down
