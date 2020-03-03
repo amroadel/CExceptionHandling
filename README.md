@@ -8,12 +8,12 @@ https://github.com/nicolasbrailo/cpp_exception_handling_abi
 
 ## Table of content
 1. Research steps and issues found
-  - ULEB128 encoding
-  - Void* size
-  - Table type entries encoding
+   - ULEB128 encoding
+   - Void* size
+   - Table type entries encoding
 2. LSDA table break down
-  - Searching the LSDA for a handler
-  - TTBase_encoding break down
+   - Searching the LSDA for a handler
+   - TTBase_encoding break down
 
 ## Research steps and issues found
 The research in implementing a simplified ABI that can handle c++ exceptions firstly began by reviewing Brailovsky's blog. He tried to discover the minimum set of functions needed to have a working ABI by linking a throwing cpp file to a normal c file (because c doesn't have exception handling capabilities). He compiled the files on a x86 32 bit machine using gcc and added the missing functions required by the compiler one by one in a separate file of his making. The file contained functions originaly declared in libsupc++ (c++ support library) and were intended to solve the linking error of missing references as gcc dosn't have access to libsupc++. While it did solve the problem on the same environment, when trying on a x86 64 bit machine, segmentation fault error occures for various reasons starting from v08 that will be disscussed below.  
