@@ -26,7 +26,48 @@ After finding the correct handler from the call site table, the next step is acc
 In one of the earlier version when we first started reading the lsda, we came across a '.byte' entry that we ignored assuming that it holds unnecessary information about the encoding of the type table. Well, this seamingly innocent single byte value should be masked with 3 different values to get the appropriate size, encoding, and relative address base. Now the size and encoding were not a problem (well we already solved the size issue and the size directives made it clear that this is a 4 byte value). The relative address base on the other hand was wrongfully ignored. It was assumed in the blog that the adress was an absolute address to a location in the assembly code. It turns out it's a pc-relative address (relative to the location of the current entry to be exact) after tracing the eh-personality of the libsupc++ library. In order to get the correct address, just add the value found in the type table to the address of the value in the table (this was implemented in 'get_ttype_entry'). And there you have it, v08 now finally works on an x86_64 machine. We were hoping that propagating the changes to v12 would solve everything, but '__cxa_throw' function had another say in the matter. We are still in the process of debugging it.
 
 ## LSDA table break down
-In order to understand the exception handling process, a through understanding of the lsda area is a must. this section provides an insight on each field. The assembly code generated from the throw.cpp file in the blog is taken as an example  
+In order to understand the exception handling process, a through understanding of the lsda area is a must. this section provides an insight on each field. The assembly code below generated from the throw.cpp file in the blog is taken as an example  
+'''
+.LFE2:
+	.section	.gcc_except_table
+	.align 4
+.LLSDA2:
+	.byte	0xff
+	.byte	0x9b
+	.uleb128 .LLSDATT2-.LLSDATTD2
+.LLSDATTD2:
+	.byte	0x1
+	.uleb128 .LLSDACSE2-.LLSDACSB2
+.LLSDACSB2:
+	.uleb128 .LEHB7-.LFB2
+	.uleb128 .LEHE7-.LEHB7
+	.uleb128 .L26-.LFB2
+	.uleb128 0x3
+	.uleb128 .LEHB8-.LFB2
+	.uleb128 .LEHE8-.LEHB8
+	.uleb128 0
+	.uleb128 0
+	.uleb128 .LEHB9-.LFB2
+	.uleb128 .LEHE9-.LEHB9
+	.uleb128 .L27-.LFB2
+	.uleb128 0
+	.uleb128 .LEHB10-.LFB2
+	.uleb128 .LEHE10-.LEHB10
+	.uleb128 .L28-.LFB2
+	.uleb128 0
+	.uleb128 .LEHB11-.LFB2
+	.uleb128 .LEHE11-.LEHB11
+	.uleb128 0
+	.uleb128 0
+.LLSDACSE2:
+	.byte	0x2
+	.byte	0
+	.byte	0x1
+	.byte	0x7d
+	.align 4
+	.long	DW.ref._ZTI9Exception-.
+	.long	DW.ref._ZTI14Fake_Exception-.
+'''
 Note the following abbriviations:  
 - @LP: landing pad
 - @TT: type table
@@ -37,9 +78,9 @@ Note the following abbriviations:
 | Section | Field Name | Size | Value(Example) | Description |
 |-------------------|--------------------|-----------|-------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
 | LSDA Header | @LPStart_encoding | .byte | 0xff | The encoding used in the next field (0xff means omitted) |
-|  | @LPStart(optional) | (omitted) | (omitted) | The relative address base for entries (call sites) in the call site table (if removed, addresses will be relative to function start) |
+|  | @LPStart(optional) | (omitted) | (omitted) | The relative address base for entries (landing pads) in the call site table (if removed, addresses will be relative to function start) |
 |  | @TTBase_encoding | .byte | 0x9b | According to the mask applied, it can give other info about the stored entries (Mask in a separate table) |
-|  | @TTBase | .uleb128 | .LLSDATT1-.LLSDATTD1 | type_table_start - call_site_table_start: offset to the type table from after the lsda header |
+|  | @TTBase | .uleb128 | .LLSDATT1-.LLSDATTD1 | type_table_start - call_site_table_start: offset to the type table from @TTBase |
 |  | @CSTable_encoding | .byte | 0x1 | The encoding used in the call site table records (entries). In this case it's uleb128 |
 |  | @CSTable_size | .uleb128 | .LLSDACSE1-.LLSDACSB1 | call_site_table_end - call_site_table_start: call site table size. It's also the action table offset as it comes directly after cs table |
 | Call Site Records | @CS | .uleb128 | .LEHB0-.LFB1 | call_site_start - function_start: call site relative address (relative to function_start) |
@@ -59,10 +100,10 @@ Iterating the LSDA happens as follows:
 3. if the value falls in the call site range check the value of @LP for this call site record
 4. if it's zero then there is no handler, skip to the next call site record
 5. if it's non-zero check it's @AT_offset
-6. if it's zero then (this is a special case we will discuss later)
+6. if it's zero then this is a clean up handler (destructors and etc) that should be called in the clean up phase
 7. if it's non zero then jump to action_table_start[(@AT_offset-1)] and check the value of @TT_offset in this action record
 8. jump to type_tabel_start[-@TT_offset] and access the type info following the rules found in @TTBase_encoding
-9. if the type info matches the one thrown then you have found the appropriate handler in @LP
+9. if the type info matches the one thrown then you have found the appropriate handler in @LP (or if it's zero which represent a catch all)
 10. if it doesn't then back to the action record check @AR_offset for the next action record relative offset, if @AR_offset was zero then this is the end and you can't handle this exception with this landing pad (skip it)
 11. if you reached the end of the call site table then there is no handler in this frame, you either unwind again or terminate
 ### TTBase_encoding break down
