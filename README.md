@@ -29,47 +29,47 @@ If you jump all the way up to cxa_throw you will notice that there is a weird -1
 
 ## LSDA table break down
 In order to understand the exception handling process, a through understanding of the lsda area is a must. this section provides an insight on each field. The assembly code below generated from the throw.cpp file in the blog is taken as an example  
-'''
-.LFE2:
-	.section	.gcc_except_table
-	.align 4
-.LLSDA2:
-	.byte	0xff
-	.byte	0x9b
-	.uleb128 .LLSDATT2-.LLSDATTD2
-.LLSDATTD2:
-	.byte	0x1
-	.uleb128 .LLSDACSE2-.LLSDACSB2
-.LLSDACSB2:
-	.uleb128 .LEHB7-.LFB2
-	.uleb128 .LEHE7-.LEHB7
-	.uleb128 .L26-.LFB2
-	.uleb128 0x3
-	.uleb128 .LEHB8-.LFB2
-	.uleb128 .LEHE8-.LEHB8
-	.uleb128 0
-	.uleb128 0
-	.uleb128 .LEHB9-.LFB2
-	.uleb128 .LEHE9-.LEHB9
-	.uleb128 .L27-.LFB2
-	.uleb128 0
-	.uleb128 .LEHB10-.LFB2
-	.uleb128 .LEHE10-.LEHB10
-	.uleb128 .L28-.LFB2
-	.uleb128 0
-	.uleb128 .LEHB11-.LFB2
-	.uleb128 .LEHE11-.LEHB11
-	.uleb128 0
-	.uleb128 0
-.LLSDACSE2:
-	.byte	0x2
-	.byte	0
-	.byte	0x1
-	.byte	0x7d
-	.align 4
-	.long	DW.ref._ZTI9Exception-.
-	.long	DW.ref._ZTI14Fake_Exception-.
-'''
+
+    .LFE2:
+      .section	.gcc_except_table
+      .align 4
+    .LLSDA2:
+      .byte	0xff
+      .byte	0x9b
+      .uleb128 .LLSDATT2-.LLSDATTD2
+    .LLSDATTD2:
+      .byte	0x1
+      .uleb128 .LLSDACSE2-.LLSDACSB2
+    .LLSDACSB2:
+      .uleb128 .LEHB7-.LFB2
+      .uleb128 .LEHE7-.LEHB7
+      .uleb128 .L26-.LFB2
+      .uleb128 0x3
+      .uleb128 .LEHB8-.LFB2
+      .uleb128 .LEHE8-.LEHB8
+      .uleb128 0
+      .uleb128 0
+      .uleb128 .LEHB9-.LFB2
+      .uleb128 .LEHE9-.LEHB9
+      .uleb128 .L27-.LFB2
+      .uleb128 0
+      .uleb128 .LEHB10-.LFB2
+      .uleb128 .LEHE10-.LEHB10
+      .uleb128 .L28-.LFB2
+      .uleb128 0
+      .uleb128 .LEHB11-.LFB2
+      .uleb128 .LEHE11-.LEHB11
+      .uleb128 0
+      .uleb128 0
+    .LLSDACSE2:
+      .byte	0x2
+      .byte	0
+      .byte	0x1
+      .byte	0x7d
+      .align 4
+      .long	DW.ref._ZTI9Exception-.
+      .long	DW.ref._ZTI14Fake_Exception-.
+
 Note the following abbriviations:  
 - @LP: landing pad
 - @TT: type table
