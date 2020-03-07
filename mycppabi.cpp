@@ -1,8 +1,12 @@
-
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+#include <unwind.h>
+#include <typeinfo>
+
+typedef unsigned char uint8_t;
+typedef unsigned long uint64_t;
+typedef unsigned long uintptr_t;
+typedef signed int int32_t;
 
 namespace __cxxabiv1 {
     struct __class_type_info {
@@ -10,22 +14,7 @@ namespace __cxxabiv1 {
     } ti;
 }
 
-#define EXCEPTION_BUFF_SIZE 255
-char exception_buff[EXCEPTION_BUFF_SIZE];
-
 extern "C" {
-
-void* __cxa_allocate_exception(size_t thrown_size)
-{
-    if (thrown_size > EXCEPTION_BUFF_SIZE) printf("Exception too big");
-    return &exception_buff;
-}
-
-void __cxa_free_exception(void *thrown_exception);
-
-
-#include <unwind.h>
-#include <typeinfo>
 
 typedef void (*unexpected_handler)(void);
 typedef void (*terminate_handler)(void);
@@ -47,23 +36,36 @@ struct __cxa_exception {
 	_Unwind_Exception	unwindHeader;
 };
 
+void* __cxa_allocate_exception(size_t thrown_size) noexcept
+{
+    void *ret;
+
+    thrown_size += sizeof(__cxa_exception) + 10000;
+    ret = malloc (thrown_size);
+    if (!ret)
+        exit(0);
+
+    return (void *)((char *)ret + sizeof(__cxa_exception));
+}
+
+void __cxa_free_exception(void *thrown_exception) noexcept
+{
+    char *ptr = (char *) thrown_exception - sizeof (__cxa_exception);
+    free (ptr);
+}
+
 void __cxa_throw(void* thrown_exception,
                  std::type_info *tinfo,
                  void (*dest)(void*))
 {
-    __cxa_exception *header = ((__cxa_exception *) thrown_exception);
-
-    // We need to save the type info in the exception header _Unwind_ will
-    // receive, otherwise we won't be able to know it when unwinding
+    __cxa_exception *header = ((__cxa_exception *) thrown_exception - 1);
     header->exceptionType = tinfo;
-
+    header->exceptionDestructor = dest;
     _Unwind_RaiseException(&header->unwindHeader);
 
-    // __cxa_throw never returns
-    printf("no one handled __cxa_throw, terminate!\n");
+    printf("no handler found, terminate!\n");
     exit(0);
 }
-
 
 void __cxa_begin_catch()
 {
@@ -82,19 +84,20 @@ void __cxa_end_catch()
 
 int readSLEB128(const uint8_t* data)
 {
-    uintptr_t result = 0;
-    uintptr_t shift = 0;
+    uint64_t result = 0;
+    uint64_t shift = 0;
     unsigned char byte;
     const uint8_t *p = data;
+
     do
     {
         byte = *p++;
-        result |= static_cast<uintptr_t>(byte & 0x7F) << shift;
+        result |= static_cast<uint64_t>(byte & 0x7F) << shift;
         shift += 7;
     } while (byte & 0x80);
 
     if ((byte & 0x40) && (shift < (sizeof(result) << 3)))
-        result |= static_cast<uintptr_t>(~0) << shift;
+        result |= static_cast<uint64_t>(~0) << shift;
 
     return static_cast<int>(result);
 }
@@ -108,21 +111,21 @@ int readSLEB128(const uint8_t* data)
  * &LSDA_ptr will be a non-const pointer to a const place in memory
  */
 typedef const uint8_t* LSDA_ptr;
-typedef _uleb128_t LSDA_line;
+typedef uint64_t LSDA_line;
 
 //This function receives a pointer the first byte to be decoded and the address of where to put the decoded value.
 const unsigned char *
-read_uleb128 (const unsigned char *p, _uleb128_t *val)
+read_uleb128 (const unsigned char *p, uint64_t *val)
 {
-  unsigned int shift = 0;
+  uint64_t shift = 0;
+  uint64_t result = 0;
   unsigned char byte;
-  _uleb128_t result;
-  result = 0;
+
   do
     {
       byte = *p++; 
       // Shifting the byte to the left and propagating the new byte to it (if there's any)
-      result |= ((_uleb128_t)byte & 0x7f) << shift;
+      result |= ((uint64_t)byte & 0x7f) << shift;
       shift += 7;
     }
   // if the 8th bit is 1, this means that there still another byte to be concatinated to the current byte (if zero, then decoding is done)
@@ -143,7 +146,6 @@ get_ttype_entry (const uint8_t* entry)
         return NULL;
 
     result = *u + (unsigned long)u;
-	entry += 4;
     result = *(unsigned long *)result;
     
     const std::type_info *tinfo = reinterpret_cast<const std::type_info *>(result);
