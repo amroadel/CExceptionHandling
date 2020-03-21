@@ -1,16 +1,16 @@
 all: app
 
-throw.o: throw.cpp throw.h
-		g++ -c -o throw.o -O0 -ggdb throw.cpp
+throw.o: test/throw.cpp test/throw.h
+		g++ -c -o throw.o -O0 -ggdb test/throw.cpp
 
-mycppabi.o: mycppabi.cpp
-		g++ -c -o mycppabi.o -O0 -ggdb mycppabi.cpp
+libsupcpp.o: libsupcpp.cpp
+		g++ -c -o libsupcpp.o -O0 -ggdb libsupcpp.cpp
 
-main.o: main.c
-		gcc -c -o main.o -O0 -ggdb main.c
+main.o: test/main.c
+		gcc -c -o main.o -O0 -ggdb test/main.c
 
-app: main.o throw.o mycppabi.o
-		gcc main.o throw.o mycppabi.o -O0 -ggdb -o app
+app: main.o throw.o libsupcpp.o
+		gcc main.o throw.o libsupcpp.o -O0 -ggdb -o app
 
 throw.gas: throw.cpp
 		g++ -c throw.cpp -g -Wa,-adhls > throw.gas
@@ -20,7 +20,7 @@ throw.s: throw.cpp
 
 .PHONY: clean run
 clean:
-	rm -f main.o throw.o mycppabi.o app
+	rm -f main.o throw.o libsupcpp.o app
 
 run: app
 		./app
