@@ -40,7 +40,7 @@ void* __cxa_allocate_exception(size_t thrown_size) noexcept
 {
     void *ret;
 
-    thrown_size += sizeof(__cxa_exception) + 10000;
+    thrown_size += sizeof(__cxa_exception);
     ret = malloc (thrown_size);
     if (!ret)
         exit(0);
