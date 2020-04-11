@@ -3,6 +3,7 @@
 #include <unwind.h>
 #include <typeinfo>
 
+// TODO: these should be in stdint
 typedef unsigned char uint8_t;
 typedef unsigned long uint64_t;
 typedef unsigned long uintptr_t;
@@ -437,7 +438,7 @@ _Unwind_Reason_Code
     return _URC_INSTALL_CONTEXT;
 }
 
-#include "unwind-test.h"
+
 _Unwind_Reason_Code __gxx_personality_v0 (
                              int version,
                              _Unwind_Action actions,
@@ -445,9 +446,6 @@ _Unwind_Reason_Code __gxx_personality_v0 (
                              _Unwind_Exception* unwind_exception,
                              _Unwind_Context* context)
 {
-    if (actions & _UA_SEARCH_PHASE) printf ("search phase\n");
-    else  printf ("cleanup phase\n");
-    test_fp(context);
     // Calculate what the instruction pointer was just before the
     // exception was thrown for this stack frame
     uintptr_t throw_ip = _Unwind_GetIP(context) - 1;
