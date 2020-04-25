@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#define NULL ((void*) 0) // this should be defined in std
+
 typedef unsigned test_Unwind_Exception_Class __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Sword __attribute__((__mode__(__DI__)));
@@ -90,6 +92,9 @@ typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
     (int, test_Unwind_Action, test_Unwind_Exception_Class,
     struct test_Unwind_Exception *, struct test_Unwind_Context *);
     
+void
+test_Unwind(struct test_Unwind_Context *);
+
 #ifdef __cplusplus
 }
 #endif
