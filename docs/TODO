@@ -12,6 +12,6 @@
 [ ] include a typeinfo replacement
 [x] define int types and pointer types
 [ ] allocating in emergency pool in case malloc fails
-[ ] free the thrown object itself not just the exception header
+[ ] free the thrown object itself not just the exception header (also properly free the header)
 [ ] eh_terminate get_unexpected() and get_terminate()
 [ ] sizes of unwind 'typedef'ed variables needs to be checked
