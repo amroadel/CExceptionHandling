@@ -19,6 +19,12 @@ size_of_encoded_value (unsigned char encoding)
         return 4;
     case DW_EH_PE_udata8:
         return 8;
+    case DW_EH_PE_sdata2:
+        return 2;
+    case DW_EH_PE_sdata4:
+        return 4;
+    case DW_EH_PE_sdata8:
+        return 8;
     }
     abort();
 }
