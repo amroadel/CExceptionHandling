@@ -1,5 +1,5 @@
-#ifndef TESTtest_Unwind_PE
-#define TESTtest_Unwind_PE
+#ifndef TEST_UNWIND_PE
+#define TEST_UNWIND_PE
 
 #include "test-unwind.h"
 
@@ -51,4 +51,4 @@ read_encoded_value_with_base (
 }
 #endif
 
-#endif /* TESTtest_Unwind_PE */
+#endif /* TEST_UNWIND_PE */

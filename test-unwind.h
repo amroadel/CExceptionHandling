@@ -82,7 +82,7 @@ test_Unwind_SetIP(struct test_Unwind_Context *, test_Unwind_Ptr);
 test_Unwind_Word
 test_Unwind_GetCFA(struct test_Unwind_Context *);
 
-void *
+test_Unwind_Word
 test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *);
 
 test_Unwind_Ptr
