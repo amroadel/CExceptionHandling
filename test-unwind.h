@@ -1,18 +1,18 @@
-#ifndef UNWIND_TEST
-#define UNWIND_TEST
+#ifndef TEST_UNWIND
+#define TEST_UNWIND
+
+#include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define NULL ((void*) 0) // this should be defined in std
 
 typedef unsigned test_Unwind_Exception_Class __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Sword __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 
-// Data types
+/* Data types */
 /*  Reason codes are used to indicate failures or action results  */
 typedef enum {
     _URC_NO_REASON = 0,
@@ -50,7 +50,7 @@ struct test_Unwind_Exception {
 
 struct test_Unwind_Context;
 
-// Routines
+/* Routines */
 test_Unwind_Reason_Code
 test_Unwind_RaiseException(struct test_Unwind_Exception *exception_object);
 
@@ -99,4 +99,4 @@ test_Unwind(struct test_Unwind_Context *);
 }
 #endif
 
-#endif // UNWIND_TEST
+#endif /* TEST_UNWIND */
