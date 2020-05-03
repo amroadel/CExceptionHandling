@@ -11,20 +11,20 @@ size_of_encoded_value (unsigned char encoding)
         return 0;
 
     switch (encoding & 0x07) {
-    case DW_EH_PE_absptr:
-        return sizeof(void *);
-    case DW_EH_PE_udata2:
-        return 2;
-    case DW_EH_PE_udata4:
-        return 4;
-    case DW_EH_PE_udata8:
-        return 8;
-    case DW_EH_PE_sdata2:
-        return 2;
-    case DW_EH_PE_sdata4:
-        return 4;
-    case DW_EH_PE_sdata8:
-        return 8;
+        case DW_EH_PE_absptr:
+            return sizeof(void *);
+        case DW_EH_PE_udata2:
+            return 2;
+        case DW_EH_PE_udata4:
+            return 4;
+        case DW_EH_PE_udata8:
+            return 8;
+        case DW_EH_PE_sdata2:
+            return 2;
+        case DW_EH_PE_sdata4:
+            return 4;
+        case DW_EH_PE_sdata8:
+            return 8;
     }
     abort();
 }
@@ -92,58 +92,70 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
         p = (const unsigned char *) (test_Unwind_Ptr) (a + sizeof (void *));
     } else {
         switch (encoding & 0x0f) {
-        case DW_EH_PE_absptr:
-            result = (test_Unwind_Ptr) u->ptr;
-            p += sizeof (void *);
-            break;
+            case DW_EH_PE_absptr:
+                result = (test_Unwind_Ptr) u->ptr;
+                p += sizeof (void *);
+                break;
 
-        case DW_EH_PE_uleb128: {
-            _uleb128_t tmp;
-            p = read_uleb128 (p, &tmp);
-            result = (test_Unwind_Ptr) tmp;
-            } break;
+            case DW_EH_PE_uleb128: {
+                _uleb128_t tmp;
+                p = read_uleb128 (p, &tmp);
+                result = (test_Unwind_Ptr) tmp;
+                } break;
 
-        case DW_EH_PE_sleb128: {
-            _sleb128_t tmp;
-            p = read_sleb128 (p, &tmp);
-            result = (test_Unwind_Ptr) tmp;
-            } break;
+            case DW_EH_PE_sleb128: {
+                _sleb128_t tmp;
+                p = read_sleb128 (p, &tmp);
+                result = (test_Unwind_Ptr) tmp;
+                } break;
 
-        case DW_EH_PE_udata2:
-            result = u->u2;
-            p += 2;
-            break;
-        case DW_EH_PE_udata4:
-            result = u->u4;
-            p += 4;
-            break;
-        case DW_EH_PE_udata8:
-            result = u->u8;
-            p += 8;
-            break;
+            case DW_EH_PE_udata2:
+                result = u->u2;
+                p += 2;
+                break;
+            case DW_EH_PE_udata4:
+                result = u->u4;
+                p += 4;
+                break;
+            case DW_EH_PE_udata8:
+                result = u->u8;
+                p += 8;
+                break;
 
-        case DW_EH_PE_sdata2:
-            result = u->s2;
-            p += 2;
-            break;
-        case DW_EH_PE_sdata4:
-            result = u->s4;
-            p += 4;
-            break;
-        case DW_EH_PE_sdata8:
-            result = u->s8;
-            p += 8;
-            break;
+            case DW_EH_PE_sdata2:
+                result = u->s2;
+                p += 2;
+                break;
+            case DW_EH_PE_sdata4:
+                result = u->s4;
+                p += 4;
+                break;
+            case DW_EH_PE_sdata8:
+                result = u->s8;
+                p += 8;
+                break;
 
-        default:
-            abort();
-    }
+            default:
+                abort();
+        }
 
-        if (result != 0) {
-            result += ((encoding & 0x70) == DW_EH_PE_pcrel
-                    ? (test_Unwind_Ptr) u : base);
-            if (encoding & DW_EH_PE_indirect)
+        switch (encoding & 0x70) {
+            case DW_EH_PE_pcrel:
+                result += (test_Unwind_Ptr) u;
+                break;
+            case DW_EH_PE_textrel:
+            case DW_EH_PE_datarel:
+            case DW_EH_PE_funcrel:
+                result += base;
+                break;
+            default:
+                break;
+        }
+        if (encoding & DW_EH_PE_indirect) {
+            if (result != 0)
                 result = *(test_Unwind_Ptr *) result;
+            else
+                abort();
         }
     }
 

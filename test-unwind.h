@@ -37,17 +37,6 @@ typedef enum {
 
 struct test_Unwind_Exception;
 
-typedef void (*test_Unwind_Exception_Cleanup_Fn)
-    (test_Unwind_Reason_Code,
-    struct test_Unwind_Exception *);
-
-struct test_Unwind_Exception {
-    test_Unwind_Exception_Class exception_class;
-    test_Unwind_Exception_Cleanup_Fn exception_cleanup;
-    test_Unwind_Word private_1;
-    test_Unwind_Word private_2;
-};
-
 struct test_Unwind_Context;
 
 /* Routines */

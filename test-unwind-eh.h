@@ -7,12 +7,18 @@
 extern "C" {
 #endif
 
-/* Routines */
-static test_Unwind_Ptr
-find_fde(const unsigned char *eh_frame_hdr);
+/* Data types*/
+struct eh_frame_hdr;
 
-void
-fill_context(test_Unwind_Ptr fde, test_Unwind_Context *context);
+/* Routines */
+static void
+init_eh_frame_hdr(const unsigned char *eh_frame);
+
+static const unsigned char *
+find_fde(void *ra);
+
+static void
+fill_context(const unsigned char *fde, test_Unwind_Context *context);
 
 #ifdef __cplusplus
 }
