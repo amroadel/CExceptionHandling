@@ -12,7 +12,10 @@ static test_Unwind_Ptr
 find_fde(const unsigned char *eh_frame_hdr);
 
 void
-fill_context(test_Unwind_Ptr fde, test_Unwind_Context *context);
+fill_context(const unsigned char * fde, struct test_Unwind_Context *context);
+
+static void
+add_lsda(const unsigned char *fde, struct test_Unwind_Context *context);
 
 #ifdef __cplusplus
 }

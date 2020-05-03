@@ -28,6 +28,38 @@ size_of_encoded_value (unsigned char encoding)
     }
     abort();
 }
+#ifndef NO_BASE_OF_ENCODED_VALUE
+
+/* Given an encoding and an _Unwind_Context, return the base to which
+   the encoding is relative.  This base may then be passed to
+   read_encoded_value_with_base for use when the _Unwind_Context is
+   not available.  */
+
+//TODO: define the used unwind functions 
+static test_Unwind_Ptr
+base_of_encoded_value (unsigned char encoding, struct test_Unwind_Context *context)
+{
+  if (encoding == DW_EH_PE_omit)
+    return 0;
+
+  switch (encoding & 0x70)
+    {
+    case DW_EH_PE_absptr:
+    case DW_EH_PE_pcrel:
+    case DW_EH_PE_aligned:
+      return 0;
+
+    case DW_EH_PE_textrel:
+      return _Unwind_GetTextRelBase (context);
+    case DW_EH_PE_datarel:
+      return _Unwind_GetDataRelBase (context);
+    case DW_EH_PE_funcrel:
+      return _Unwind_GetRegionStart (context);
+    }
+  __gxx_abort ();
+}
+
+#endif
 
 static const unsigned char *
 read_uleb128 (const unsigned char *p, _uleb128_t *val)
@@ -149,6 +181,17 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
 
     *val = result;
     return p;
+}
+/* Like read_encoded_value_with_base, but get the base from the context
+   rather than providing it directly.  */
+
+static inline const unsigned char *
+read_encoded_value (struct test_Unwind_Context *context, unsigned char encoding,
+		    const unsigned char *p, test_Unwind_Ptr *val)
+{
+  return read_encoded_value_with_base (encoding,
+		base_of_encoded_value (encoding, context),
+		p, val);
 }
 
 #ifdef __cplusplus
