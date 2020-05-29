@@ -1,10 +1,11 @@
 #include "test-unwind-pe.h"
+#include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static unsigned int
+unsigned int
 size_of_encoded_value (unsigned char encoding)
 {
     if (encoding == DW_EH_PE_omit)
@@ -29,7 +30,7 @@ size_of_encoded_value (unsigned char encoding)
     abort();
 }
 
-static const unsigned char *
+const unsigned char *
 read_uleb128 (const unsigned char *p, _uleb128_t *val)
 {
     unsigned int shift = 0;
@@ -47,7 +48,7 @@ read_uleb128 (const unsigned char *p, _uleb128_t *val)
     return p;
 }
 
-static const unsigned char *
+const unsigned char *
 read_sleb128 (const unsigned char *p, _sleb128_t *val)
 {
     unsigned int shift = 0;
@@ -68,7 +69,7 @@ read_sleb128 (const unsigned char *p, _sleb128_t *val)
     return p;
 }
 
-static const unsigned char *
+const unsigned char *
 read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
 			      const unsigned char *p, test_Unwind_Ptr *val)
 {

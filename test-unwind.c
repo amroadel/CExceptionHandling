@@ -1,4 +1,5 @@
 #include "test-unwind.h"
+#include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,7 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exception_object)
         bp = (void *) *((long *)bp);
         ra = (void *) *((long *)bp - 1);
         context.ra = ra;
-        test_Unwind(&context); // This should print ra for testing, it was done in a separate code
+        //test_Unwind(&context); // This should print ra for testing, it was done in a separate code
     } while (ra !=  0);
 }
 

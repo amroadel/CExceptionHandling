@@ -11,14 +11,14 @@ extern "C" {
 struct eh_frame_hdr;
 
 /* Routines */
-static void
+void
 init_eh_frame_hdr(const unsigned char *eh_frame);
 
-static const unsigned char *
+const unsigned char *
 find_fde(void *ra);
 
-static void
-fill_context(const unsigned char *fde, test_Unwind_Context *context);
+// static void
+// fill_context(const unsigned char *fde, test_Unwind_Context *context);
 
 #ifdef __cplusplus
 }

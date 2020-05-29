@@ -33,16 +33,16 @@ typedef unsigned _sleb128_t __attribute__((__mode__(__pointer__)));
 #define DW_EH_PE_indirect	    0x80
 
 /* Routines*/
-static unsigned int
+unsigned int
 size_of_encoded_value (unsigned char encoding);
 
-static const unsigned char *
+const unsigned char *
 read_uleb128 (const unsigned char *p, _uleb128_t *val);
 
-static const unsigned char *
+const unsigned char *
 read_sleb128 (const unsigned char *p, _sleb128_t *val);
 
-static const unsigned char *
+const unsigned char *
 read_encoded_value_with_base (
     unsigned char encoding, test_Unwind_Ptr base,
 	const unsigned char *p, test_Unwind_Ptr *val);

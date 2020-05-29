@@ -1,8 +1,6 @@
 #ifndef TEST_UNWIND
 #define TEST_UNWIND
 
-#include "stdlib.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,8 +79,8 @@ typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
     (int, test_Unwind_Action, test_Unwind_Exception_Class,
     struct test_Unwind_Exception *, struct test_Unwind_Context *);
     
-void
-test_Unwind(struct test_Unwind_Context *);
+// void
+// test_Unwind(struct test_Unwind_Context *);
 
 #ifdef __cplusplus
 }

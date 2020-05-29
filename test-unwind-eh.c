@@ -1,5 +1,7 @@
 #include "test-unwind-eh.h"
 #include "test-unwind-pe.h"
+#include "stdlib.h"
+#include "stdio.h" // remember to delete this
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +20,7 @@ struct eh_frame_hdr {
 } header;
 
 /* Routines */
-static void
+void
 init_eh_frame_hdr(const unsigned char *eh_frame_hdr)
 {
     const unsigned char *p = eh_frame_hdr;
@@ -52,7 +54,7 @@ init_eh_frame_hdr(const unsigned char *eh_frame_hdr)
         header.entries = NULL;
 }
 
-static const unsigned char *
+const unsigned char *
 find_fde(void *ra)
 {
     if (header.entries == NULL || header.count == 0)
@@ -63,22 +65,33 @@ find_fde(void *ra)
     test_Unwind_Ptr base;
     test_Unwind_Ptr fde;
 
+    printf(" base before is %p\n", *(short *)p);
     p = read_encoded_value_with_base(header.entry_encoding,
     (test_Unwind_Ptr)header.self, p, &base);
     for (int i = 0; i < header.count; i++) {
         p = read_encoded_value_with_base(header.entry_encoding,
         (test_Unwind_Ptr)header.self, p, &fde);
 
+        printf(" base is %p\n", base);
+
         if (ip > base) {
-            if (i + 1 == header.count)
+            if (i + 1 == header.count) {
+                printf(" base is %p\n", base);
+                printf(" ra is %p\n", ip);
                 return (const unsigned char *)fde;
+            }
+            printf(" base before is %p\n", *(short *)p);
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
-            if (base > ip)
+            if (base > ip) {
+                printf(" base is %p\n", base);
+                printf(" ra is %p\n", ip);
                 return (const unsigned char *)fde;
+            }
         } else {
             if (i + 1 == header.count)
                 abort();
+            printf(" base before is %p\n", *(short *)p);
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
         }            
@@ -86,8 +99,8 @@ find_fde(void *ra)
     abort();
 }
 
-static void
-fill_context(const unsigned char *fde, test_Unwind_Context *context);
+// static void
+// fill_context(const unsigned char *fde, test_Unwind_Context *context);
 
 #ifdef __cplusplus
 }
