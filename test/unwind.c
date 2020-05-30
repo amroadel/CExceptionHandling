@@ -26,7 +26,7 @@ void foo()
     printf("%p\n", bp);
     ra = __builtin_extract_return_addr (__builtin_return_address (0));
     printf("%p\n", ra);
-    printf("%p\n\n", *((long *)bp));
+    printf("%lx\n\n", *((long *)bp));
 
     while (bp !=  0) {
         printf("%p\n", bp);

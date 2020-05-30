@@ -18,6 +18,16 @@ struct eh_frame_hdr {
     int count;
     const unsigned char *entries;
 } header;
+struct test_Unwind_Context {
+    void *cfa;
+    void *ra;
+    void *lsda;
+    struct eh_bases bases;
+    // keep them for now until we know more about them
+    test_Unwind_Word flags;
+    test_Unwind_Word version;
+    test_Unwind_Word args_size;
+};
 
 /* Routines */
 void
@@ -65,33 +75,29 @@ find_fde(void *ra)
     test_Unwind_Ptr base;
     test_Unwind_Ptr fde;
 
-    printf(" base before is %p\n", *(short *)p);
     p = read_encoded_value_with_base(header.entry_encoding,
     (test_Unwind_Ptr)header.self, p, &base);
     for (int i = 0; i < header.count; i++) {
+        printf(" base is %lx\n", base);
         p = read_encoded_value_with_base(header.entry_encoding,
         (test_Unwind_Ptr)header.self, p, &fde);
 
-        printf(" base is %p\n", base);
-
         if (ip > base) {
             if (i + 1 == header.count) {
-                printf(" base is %p\n", base);
-                printf(" ra is %p\n", ip);
+                printf(" case 1 base is %lx\n", base);
+                printf(" ra is %lx\n", ip);
                 return (const unsigned char *)fde;
             }
-            printf(" base before is %p\n", *(short *)p);
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
             if (base > ip) {
-                printf(" base is %p\n", base);
-                printf(" ra is %p\n", ip);
+                printf(" case 2 base is %lx\n", base);
+                printf(" ra is %lx\n", ip);
                 return (const unsigned char *)fde;
             }
         } else {
             if (i + 1 == header.count)
                 abort();
-            printf(" base before is %p\n", *(short *)p);
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
         }            
@@ -99,8 +105,8 @@ find_fde(void *ra)
     abort();
 }
 
-// static void
-// fill_context(const unsigned char *fde, test_Unwind_Context *context);
+void
+fill_context(const unsigned char *fde, struct test_Unwind_Context *context);
 
 #ifdef __cplusplus
 }

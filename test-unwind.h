@@ -7,7 +7,7 @@ extern "C" {
 
 typedef unsigned test_Unwind_Exception_Class __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
-typedef unsigned test_Unwind_Sword __attribute__((__mode__(__DI__)));
+typedef signed test_Unwind_Sword __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 
 /* Data types */
@@ -69,7 +69,7 @@ test_Unwind_SetIP(struct test_Unwind_Context *, test_Unwind_Ptr);
 test_Unwind_Word
 test_Unwind_GetCFA(struct test_Unwind_Context *);
 
-test_Unwind_Word
+test_Unwind_Ptr
 test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *);
 
 test_Unwind_Ptr
@@ -78,9 +78,6 @@ test_Unwind_GetRegionStart(struct test_Unwind_Context *);
 typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
     (int, test_Unwind_Action, test_Unwind_Exception_Class,
     struct test_Unwind_Exception *, struct test_Unwind_Context *);
-    
-// void
-// test_Unwind(struct test_Unwind_Context *);
 
 #ifdef __cplusplus
 }
