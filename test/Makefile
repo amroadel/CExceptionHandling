@@ -2,7 +2,7 @@ TESTDIR = ./
 BUILDDIR = ../build/
 DIR = ../
 TARGET = app
-OBJECTS = $(BUILDDIR)main.o $(BUILDDIR)throw.o $(BUILDDIR)libsupcpp.o $(BUILDDIR)unwind-test.o #add this when you want to test unwind-test
+OBJECTS = $(BUILDDIR)seppuku.o $(BUILDDIR)throw.o $(BUILDDIR)libsupcpp.o $(BUILDDIR)unwind-test.o #add this when you want to test unwind-test
 AUX = $(BUILDDIR)throw.gas $(BUILDDIR)throw.s
 OPTIONS = -O0 -ggdb
 
@@ -20,8 +20,8 @@ $(BUILDDIR)libsupcpp.o: $(DIR)libsupcpp.cpp
 $(BUILDDIR)throw.o: $(TESTDIR)throw.cpp $(TESTDIR)throw.h
 	g++ -c $(OPTIONS) $(TESTDIR)throw.cpp -o $(BUILDDIR)throw.o
 
-$(BUILDDIR)main.o: $(TESTDIR)main.c
-	gcc -c $(OPTIONS) $(TESTDIR)main.c -o $(BUILDDIR)main.o
+$(BUILDDIR)seppuku.o: $(TESTDIR)seppuku.c
+	gcc -c $(OPTIONS) $(TESTDIR)seppuku.c -o $(BUILDDIR)seppuku.o
 
 $(TARGET): $(OBJECTS)
 	gcc $(OPTIONS) $(OBJECTS) -o $(BUILDDIR)$(TARGET)
