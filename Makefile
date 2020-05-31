@@ -10,7 +10,7 @@ test_libsupcpp_objects = $(build)seppuku.o $(build)throw.o $(libsupcpp_objects)
 aux = $(build)throw.gas $(build)throw.s
 options = -O0 -ggdb
 
-build: test_unwind
+build: build_dir test_unwind
 
 test_unwind: $(test_unwind_objects)
 	gcc $(options) $(test_unwind_objects) -o $(build)test_unwind.out
@@ -59,6 +59,9 @@ throw.gas: $(test)throw.cpp
 throw.s: $(test)throw.cpp
 	g++ -S $(test)throw.cpp -o $(build)throw.s
 
-.PHONY: clean
+.PHONY: clean build_dir
 clean:
 	rm -f $(test_unwind_objects) $(test_libsupcpp_objects) $(aux) $(build)test_libsupcpp.out $(build)test_unwind.out
+
+build_dir:
+	mkdir -p build

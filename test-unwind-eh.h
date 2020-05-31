@@ -9,15 +9,16 @@ extern "C" {
 
 /* Data types*/
 struct eh_frame_hdr;
-struct eh_bases {
+
+struct dwarf_bases {
   void *tbase;
   void *dbase;
   void *func;
-};
+} eh_bases;
 
 /* Routines */
 void
-init_eh_frame_hdr(const unsigned char *eh_frame);
+init_eh_frame_hdr(const unsigned char *eh_frame, const unsigned char *text);
 
 const unsigned char *
 find_fde(void *ra);

@@ -21,7 +21,7 @@ struct test_Unwind_Context {
     void *cfa;
     void *ra;
     void *lsda;
-    struct eh_bases bases;
+    struct dwarf_bases bases;
     // keep them for now until we know more about them
     test_Unwind_Word flags;
     test_Unwind_Word version;

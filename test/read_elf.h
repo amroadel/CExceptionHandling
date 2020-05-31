@@ -41,8 +41,8 @@ struct argument {
 };
 
 char* get_sectionHeader_string_table(Elf64_Ehdr *hdr);
-static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr );
-unsigned char *read_elf(int argc, char **argv);
+static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr, const char * section);
+unsigned char *read_elf(int argc, char **argv, const char * section);
 
 
 #endif /* __READ_ELF_H__ */

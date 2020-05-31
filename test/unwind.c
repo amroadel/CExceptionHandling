@@ -54,11 +54,14 @@ void bar3() {
 
 int main(int argc, char *argv[]) {
     printf("0x%lx\n", (unsigned long)&__executable_start);
+    unsigned char *ptr3 =read_elf(argc, argv, ".text");
+    const unsigned char *text = (const unsigned char *)((unsigned long)ptr3 + (unsigned long)&__executable_start);
+    printf("%p\n", text);
     // void * b = sbrk (0);
     // printf ("brk(NULL): %p\n",b);
     // printf ("Hello World!: %p\n",main);
 
-    unsigned char *ptr2 =read_elf(argc, argv);
+    unsigned char *ptr2 =read_elf(argc, argv, ".eh_frame_hdr");
     printf("ptr is %p\n", ptr2);
     // const unsigned char *ptr = &__executable_start;
     // printf("ptr is %p\n", ptr);
@@ -69,7 +72,7 @@ int main(int argc, char *argv[]) {
     const unsigned char *eh_hdr = (const unsigned char *)((unsigned long)ptr2 + (unsigned long)&__executable_start);
     printf("ptr is %p\n", eh_hdr);
     printf("\n");
-    init_eh_frame_hdr(eh_hdr);
+    init_eh_frame_hdr(eh_hdr, text);
 
     bar3();
     return 0;
