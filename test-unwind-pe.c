@@ -56,7 +56,7 @@ base_of_encoded_value (unsigned char encoding, struct test_Unwind_Context *conte
     case DW_EH_PE_funcrel:
       return _Unwind_GetRegionStart (context);
     }
-  __gxx_abort ();
+  abort();
 }
 
 #endif
