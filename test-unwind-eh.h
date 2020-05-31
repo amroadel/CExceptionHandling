@@ -7,10 +7,20 @@
 extern "C" {
 #endif
 
-/* Routines */
-static test_Unwind_Ptr
-find_fde(const unsigned char *eh_frame_hdr);
+/* Data types*/
+struct eh_frame_hdr;
+struct eh_bases {
+  void *tbase;
+  void *dbase;
+  void *func;
+};
 
+/* Routines */
+void
+init_eh_frame_hdr(const unsigned char *eh_frame);
+
+const unsigned char *
+find_fde(void *ra);
 void
 fill_context(const unsigned char * fde, struct test_Unwind_Context *context);
 

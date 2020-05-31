@@ -1,15 +1,13 @@
 #ifndef TEST_UNWIND
 #define TEST_UNWIND
 
-#include "stdlib.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef unsigned test_Unwind_Exception_Class __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
-typedef unsigned test_Unwind_Sword __attribute__((__mode__(__DI__)));
+typedef signed test_Unwind_Sword __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 
 /* Data types */
@@ -36,17 +34,6 @@ typedef enum {
 } test_Unwind_Action;
 
 struct test_Unwind_Exception;
-
-typedef void (*test_Unwind_Exception_Cleanup_Fn)
-    (test_Unwind_Reason_Code,
-    struct test_Unwind_Exception *);
-
-struct test_Unwind_Exception {
-    test_Unwind_Exception_Class exception_class;
-    test_Unwind_Exception_Cleanup_Fn exception_cleanup;
-    test_Unwind_Word private_1;
-    test_Unwind_Word private_2;
-};
 
 struct test_Unwind_Context;
 
@@ -82,7 +69,7 @@ test_Unwind_SetIP(struct test_Unwind_Context *, test_Unwind_Ptr);
 test_Unwind_Word
 test_Unwind_GetCFA(struct test_Unwind_Context *);
 
-test_Unwind_Word
+test_Unwind_Ptr
 test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *);
 
 test_Unwind_Ptr
@@ -91,9 +78,6 @@ test_Unwind_GetRegionStart(struct test_Unwind_Context *);
 typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
     (int, test_Unwind_Action, test_Unwind_Exception_Class,
     struct test_Unwind_Exception *, struct test_Unwind_Context *);
-    
-void
-test_Unwind(struct test_Unwind_Context *);
 
 #ifdef __cplusplus
 }

@@ -1,15 +1,109 @@
 #include "test-unwind-eh.h"
 #include "test-unwind-pe.h"
-#include "test-unwind.c"
+#include "stdlib.h"
+#include "stdio.h" // remember to delete this
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Routines */
-static test_Unwind_Ptr
-find_fde(const unsigned char *eh_frame_hdr);
+/* Data types*/
+struct eh_frame_hdr {
+    const unsigned char *self;
+    unsigned char version;
+    unsigned char eh_frame_encoding;
+    unsigned char count_encoding;
+    unsigned char entry_encoding;
+    const unsigned char *eh_frame;
+    int count;
+    const unsigned char *entries;
+} header;
+struct test_Unwind_Context {
+    void *cfa;
+    void *ra;
+    void *lsda;
+    struct eh_bases bases;
+    // keep them for now until we know more about them
+    test_Unwind_Word flags;
+    test_Unwind_Word version;
+    test_Unwind_Word args_size;
+};
 
+/* Routines */
+void
+init_eh_frame_hdr(const unsigned char *eh_frame_hdr)
+{
+    const unsigned char *p = eh_frame_hdr;
+    header.self = p;
+    header.version = *p++;
+    header.eh_frame_encoding = *p++;
+    header.count_encoding = *p++;
+    header.entry_encoding = *p++;
+
+    test_Unwind_Ptr val;
+
+    if (header.eh_frame_encoding != DW_EH_PE_omit) {
+        p = read_encoded_value_with_base(header.eh_frame_encoding,
+        (test_Unwind_Ptr)eh_frame_hdr, p, &val);
+        header.eh_frame = (const unsigned char *)val;
+    } else {
+        header.eh_frame = NULL;
+    }
+    
+    if (header.count_encoding != DW_EH_PE_omit) {
+        p = read_encoded_value_with_base(header.count_encoding,
+        (test_Unwind_Ptr)eh_frame_hdr, p, &val);
+        header.count = (int)val;
+    } else {
+        header.count = 0;
+    }
+
+    if (header.entry_encoding != DW_EH_PE_omit)
+        header.entries = p;
+    else
+        header.entries = NULL;
+}
+
+const unsigned char *
+find_fde(void *ra)
+{
+    if (header.entries == NULL || header.count == 0)
+        abort();
+    const unsigned char *p = header.entries;
+
+    test_Unwind_Ptr ip = (test_Unwind_Ptr)ra;
+    test_Unwind_Ptr base;
+    test_Unwind_Ptr fde;
+
+    p = read_encoded_value_with_base(header.entry_encoding,
+    (test_Unwind_Ptr)header.self, p, &base);
+    for (int i = 0; i < header.count; i++) {
+        printf(" base is %lx\n", base);
+        p = read_encoded_value_with_base(header.entry_encoding,
+        (test_Unwind_Ptr)header.self, p, &fde);
+
+        if (ip > base) {
+            if (i + 1 == header.count) {
+                printf(" case 1 base is %lx\n", base);
+                printf(" ra is %lx\n", ip);
+                return (const unsigned char *)fde;
+            }
+            p = read_encoded_value_with_base(header.entry_encoding,
+            (test_Unwind_Ptr)header.self, p, &base);
+            if (base > ip) {
+                printf(" case 2 base is %lx\n", base);
+                printf(" ra is %lx\n", ip);
+                return (const unsigned char *)fde;
+            }
+        } else {
+            if (i + 1 == header.count)
+                abort();
+            p = read_encoded_value_with_base(header.entry_encoding,
+            (test_Unwind_Ptr)header.self, p, &base);
+        }            
+    }
+    abort();
+}
 static void
 fill_context(const unsigned char * fde, struct test_Unwind_Context *context)
 {
@@ -30,7 +124,7 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     const unsigned char *cie_aug;
     const unsigned char *fde_aug;
     const unsigned char *p; 
-    test_Unwind_Ptr pc_begin;
+    void *pc_begin;
     _uleb128_t utmp;
     _sleb128_t stmp;
     int cie_id_offset;
@@ -44,7 +138,8 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
 
     cie_offset_value = *(fde + fde_id_offset); // the byte offset to the start of the CIE with which this FDE is associated   
     cie = (fde+fde_id_offset) - cie_offset_value; //the start of the cie (length record)
-    pc_begin = *(fde + fde_id_offset + 4); //The starting address to which this FDE applies. 
+    pc_begin = (void *)(fde + fde_id_offset + 4); //The starting address to which this FDE applies. 
+    context->bases.func = pc_begin;
 
     //TODO: if cie_legnth is 0, CIE shall be considered a terminator and the proccesing shall end
     cie_legnth = *cie;
@@ -66,7 +161,7 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     lsda_encoding = DW_EH_PE_omit;
 
     unsigned char aug_arr[6]; //hard codded for now (6 is the number of possible letters)
-    unsigned char *cie_aug_p = cie_aug; //auxillary pointer to the start of the cie_aug section 
+    const unsigned char *cie_aug_p = cie_aug; //auxillary pointer to the start of the cie_aug section 
     int i = 0;
 
     while (*cie_aug_p != '\0')
@@ -127,9 +222,11 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
   if (lsda_encoding != DW_EH_PE_omit)
     {
       test_Unwind_Ptr lsda;
-
+       
+      test_Unwind_Ptr base = (test_Unwind_Ptr) header.eh_frame;
+      fde_aug = read_encoded_value_with_base(lsda_encoding, base, fde_aug, &lsda);
+      
       //fde_aug = read_encoded_value (context, lsda_encoding, fde_aug, &lsda); //NOTE : This funtion is incomplete 
-      fde_aug = read_encoded_value_with_base(lsda_encoding, pc_begin, fde_aug, &lsda);
       context->lsda = (void *) lsda;
     }
 
