@@ -21,10 +21,10 @@ init_eh_frame_hdr(const unsigned char *eh_frame);
 
 const unsigned char *
 find_fde(void *ra);
-void
-fill_context(const unsigned char * fde, struct test_Unwind_Context *context);
+/*void
+fill_context(const unsigned char * fde, struct test_Unwind_Context *context);*/
 
-static void
+void
 add_lsda(const unsigned char *fde, struct test_Unwind_Context *context);
 
 #ifdef __cplusplus

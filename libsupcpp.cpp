@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unwind.h>
 #include <typeinfo>
+#include "test-unwind-pe.h"
 
 // TODO: these should be in stdint
 typedef unsigned char uint8_t;

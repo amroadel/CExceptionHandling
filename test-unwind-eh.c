@@ -18,7 +18,7 @@ struct eh_frame_hdr {
     int count;
     const unsigned char *entries;
 } header;
-struct test_Unwind_Context {
+/*struct test_Unwind_Context {
     void *cfa;
     void *ra;
     void *lsda;
@@ -27,6 +27,12 @@ struct test_Unwind_Context {
     test_Unwind_Word flags;
     test_Unwind_Word version;
     test_Unwind_Word args_size;
+};*/
+
+struct test_Unwind_Context{
+    void *ra;
+    void *base;
+    void *lsda;
 };
 
 /* Routines */
@@ -104,13 +110,13 @@ find_fde(void *ra)
     }
     abort();
 }
-static void
+/*static void
 fill_context(const unsigned char * fde, struct test_Unwind_Context *context)
 {
      add_lsda(fde, context);
      
-}
-static void
+}*/
+void
 add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
 {
     unsigned char lsda_encoding;
@@ -139,7 +145,7 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     cie_offset_value = *(fde + fde_id_offset); // the byte offset to the start of the CIE with which this FDE is associated   
     cie = (fde+fde_id_offset) - cie_offset_value; //the start of the cie (length record)
     pc_begin = (void *)(fde + fde_id_offset + 4); //The starting address to which this FDE applies. 
-    context->bases.func = pc_begin;
+    //context->bases.func = pc_begin;
 
     //TODO: if cie_legnth is 0, CIE shall be considered a terminator and the proccesing shall end
     cie_legnth = *cie;
