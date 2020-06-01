@@ -4,7 +4,7 @@
 #include "../test-unwind-eh.h"
 #include "../test-unwind.h"
 #include "read_elf.h"
-#include "exception_t.h"
+
 extern char __executable_start;
 extern char __etext;
 
@@ -74,7 +74,6 @@ int main(int argc, char *argv[]) {
     printf("\n");
     init_eh_frame_hdr(eh_hdr, text);
 
-    exception_func();
     bar3();
     
     return 0;
