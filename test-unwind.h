@@ -39,41 +39,47 @@ struct test_Unwind_Context;
 
 /* Routines */
 test_Unwind_Reason_Code
-test_Unwind_RaiseException(struct test_Unwind_Exception *exception_object);
+test_Unwind_RaiseException(struct test_Unwind_Exception *exc);
 
 typedef test_Unwind_Reason_Code (*test_Unwind_Stop_Fn)
     (int, test_Unwind_Action, test_Unwind_Exception_Class,
     struct test_Unwind_Exception *, struct test_Unwind_Context *, void *);
 
 test_Unwind_Reason_Code
-test_Unwind_ForcedUnwind(struct test_Unwind_Exception *, test_Unwind_Stop_Fn, void *);
+test_Unwind_ForcedUnwind(struct test_Unwind_Exception *, test_Unwind_Stop_Fn stop, void *stop_argument);
 
 void
-test_Unwind_Resume(struct test_Unwind_Exception *);
+test_Unwind_Resume(struct test_Unwind_Exception *exc);
 
 void
-test_Unwind_DeleteException(struct test_Unwind_Exception *);
+test_Unwind_DeleteException(struct test_Unwind_Exception *exc);
 
 test_Unwind_Word
-test_Unwind_GetGR(struct test_Unwind_Context *, int);
+test_Unwind_GetGR(struct test_Unwind_Context *context, int regno);
 
 void
-test_Unwind_SetGR(struct test_Unwind_Context *, int, test_Unwind_Word);
+test_Unwind_SetGR(struct test_Unwind_Context *context, int index, test_Unwind_Word val);
 
 test_Unwind_Ptr
-test_Unwind_GetIP(struct test_Unwind_Context *);
+test_Unwind_GetIP(struct test_Unwind_Context *context);
 
 void
-test_Unwind_SetIP(struct test_Unwind_Context *, test_Unwind_Ptr);
+test_Unwind_SetIP(struct test_Unwind_Context *context, test_Unwind_Ptr val);
 
 test_Unwind_Word
-test_Unwind_GetCFA(struct test_Unwind_Context *);
+test_Unwind_GetCFA(struct test_Unwind_Context *context);
 
 test_Unwind_Ptr
-test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *);
+test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *context);
 
 test_Unwind_Ptr
-test_Unwind_GetRegionStart(struct test_Unwind_Context *);
+test_Unwind_GetRegionStart(struct test_Unwind_Context *context);
+
+test_Unwind_Ptr
+test_Unwind_GetTextRelBase(struct test_Unwind_Context *context);
+
+test_Unwind_Ptr
+test_Unwind_GetDataRelBase(struct test_Unwind_Context *context);
 
 typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
     (int, test_Unwind_Action, test_Unwind_Exception_Class,
