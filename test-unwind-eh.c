@@ -3,6 +3,7 @@
 #include "stdlib.h"
 #include "stdio.h" // remember to delete this
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,11 +30,6 @@ struct eh_frame_hdr {
     test_Unwind_Word args_size;
 };*/
 
-struct test_Unwind_Context{
-    void *ra;
-    void *base;
-    void *lsda;
-};
 
 /* Routines */
 void
@@ -96,6 +92,7 @@ find_fde(void *ra)
             }
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
+            
             if (base > ip) {
                 printf(" case 2 base is %lx\n", base);
                 printf(" ra is %lx\n", ip);
@@ -136,6 +133,7 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     int cie_id_offset;
     int fde_id_offset; 
     char z_flag = 0;  
+    
 
     if(fde_legnth == 0xffffffff)
         fde_id_offset =  12; //Legnth section + extended legnth section
@@ -156,15 +154,18 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     
     cie_version = *(cie + cie_id_offset + 4); // cie_version is either 1 or 3
     cie_aug = cie + cie_id_offset + 5;
+    printf("cie_version %u\n", cie_version); 
     p = cie_aug; 
     p = read_uleb128 (p, &utmp);
     p = read_sleb128 (p, &stmp);
+
 
     if (cie_version == 1)
         p++;
     else
         p = read_uleb128 (p, &utmp);
     lsda_encoding = DW_EH_PE_omit;
+    
 
     unsigned char aug_arr[6]; //hard codded for now (6 is the number of possible letters)
     const unsigned char *cie_aug_p = cie_aug; //auxillary pointer to the start of the cie_aug section 
@@ -199,41 +200,59 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
 
     while (*cie_aug != '\0')
     {
-
+        /*printf("cie_aug %s \n", *cie_aug);
+        printf("cie_aug %c \n", *cie_aug);
+        printf("cie_aug %u \n", *cie_aug);*/
        /* "L" indicates a byte showing how the LSDA pointer is encoded.  */
       if (cie_aug[0] == 'L')
       {
+        printf("L\n");
         lsda_encoding = *p++;
+        printf("lsda_encoding %u \n",lsda_encoding);
         cie_aug += 1;      
       }
       /* "R" indicates a byte indicating how FDE addresses are encoded.  */
       else if (cie_aug[0] == 'R')
       {
+        printf("R\n");
         fde_encoding = *p++;
         cie_aug += 1;
       }
-      else
+      else if (cie_aug[0] == 'P')
       {
+        printf("P\n");
+        test_Unwind_Ptr personality; 
+        //p += sizeof (void *);
+        p = read_encoded_value_with_base (*p , 0 , p ,&personality);
         cie_aug += 1;
+      }
+      else 
+      {
+          printf("here \n");
+          cie_aug +=1; 
       }
     } 
     
     fde_aug = fde + fde_id_offset + 4; //skip legnth and ID sections
+    printf("fde_encoding %u \n",fde_encoding);
     fde_aug += 2 * size_of_encoded_value (fde_encoding);
+    
     if (z_flag)
     {
       _uleb128_t i;
       fde_aug = read_uleb128 (fde_aug, &i);
     }
-  if (lsda_encoding != DW_EH_PE_omit)
+    
+    if (lsda_encoding != DW_EH_PE_omit)
     {
       test_Unwind_Ptr lsda;
        
       test_Unwind_Ptr base = (test_Unwind_Ptr) header.eh_frame;
       fde_aug = read_encoded_value_with_base(lsda_encoding, base, fde_aug, &lsda);
       
-      //fde_aug = read_encoded_value (context, lsda_encoding, fde_aug, &lsda); //NOTE : This funtion is incomplete 
-      context->lsda = (void *) lsda;
+      printf("lsda %p \n", (void *)lsda);
+      //context->lsda = (void *) lsda;
+      
     }
 
 }

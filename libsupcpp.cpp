@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unwind.h>
 #include <typeinfo>
+#include "test-unwind-eh.h"
+#include "test-unwind-pe.h"
+
+
+
 
 // TODO: these should be in stdint
 typedef unsigned char uint8_t;
@@ -36,6 +40,12 @@ struct __cxa_exception {
 
 	_Unwind_Exception	unwindHeader;
 };
+
+/*struct test_Unwind_Context{
+    void *ra;
+    void *base;
+    void *lsda;
+};*/
 
 void* __cxa_allocate_exception(size_t thrown_size) noexcept
 {
@@ -115,7 +125,7 @@ typedef const uint8_t* LSDA_ptr;
 typedef uint64_t LSDA_line;
 
 //This function receives a pointer the first byte to be decoded and the address of where to put the decoded value.
-const unsigned char *
+/*const unsigned char *
 read_uleb128 (const unsigned char *p, uint64_t *val)
 {
   uint64_t shift = 0;
@@ -133,7 +143,7 @@ read_uleb128 (const unsigned char *p, uint64_t *val)
   while (byte & 0x80);
   *val = result;
   return p;
-}
+}*/
 
 // This function recieves a pointer to a ttype entry and return the corrisponding type_info
 // It's an implementation of three different functions from unwind-pe.h specific to our case and cannot be generalized for different encoding and size
@@ -464,6 +474,12 @@ _Unwind_Reason_Code __gxx_personality_v0 (
 
     // Create an object to hide some part of the LSDA processing
     LSDA lsda(raw_lsda);
+
+    //test
+    struct test_Unwind_Context *context2;
+    const unsigned char* fde = find_fde((void *)(throw_ip + 1));
+    add_lsda(fde, context2);
+    printf("lsda: %p\n", context2->lsda);
 
     // Go through each call site in this stack frame to check whether
     // the current exception can be handled here

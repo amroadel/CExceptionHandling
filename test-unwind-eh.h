@@ -1,7 +1,9 @@
 #ifndef TEST_UNWIND_EH
 #define TEST_UNWIND_EH
 
-#include "test-unwind.h"
+//#include "test-unwind.h"
+
+typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,6 +16,13 @@ struct eh_bases {
   void *dbase;
   void *func;
 };
+
+struct test_Unwind_Context{
+    void *ra;
+    void *base;
+    void *lsda;
+};
+
 
 /* Routines */
 void
