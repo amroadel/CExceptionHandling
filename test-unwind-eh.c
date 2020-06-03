@@ -70,7 +70,7 @@ init_eh_frame_hdr(const unsigned char *eh_frame_hdr, const unsigned char *text)
 }
 
 const unsigned char *
-find_fde(void *ra)
+find_fde(void *ra) // TODO: add the bases
 {
     if (header.entries == NULL || header.count == 0)
         abort();

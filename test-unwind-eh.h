@@ -14,7 +14,7 @@ struct dwarf_bases {
   void *tbase;
   void *dbase;
   void *func;
-} eh_bases;
+} eh_bases; // TODO: add it to the eh_frame_hdr and add the definition to a seperate dwarf library
 
 /* Routines */
 void

@@ -56,7 +56,7 @@ void
 test_Unwind_DeleteException(struct test_Unwind_Exception *exc);
 
 test_Unwind_Word
-test_Unwind_GetGR(struct test_Unwind_Context *context, int regno);
+test_Unwind_GetGR(struct test_Unwind_Context *context, int index);
 
 void
 test_Unwind_SetGR(struct test_Unwind_Context *context, int index, test_Unwind_Word val);
