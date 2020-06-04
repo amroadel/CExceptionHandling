@@ -8,7 +8,7 @@ libsupcpp_objects = $(build)libsupcpp.o
 test_unwind_objects = $(build)unwind.o $(build)read_elf.o $(unwind_objects)
 test_libsupcpp_objects = $(build)seppuku.o $(build)throw.o $(libsupcpp_objects)
 aux = $(build)throw.gas $(build)throw.s
-options = -O0 -ggdb
+options = -ggdb
 
 build: build_dir test_unwind
 
