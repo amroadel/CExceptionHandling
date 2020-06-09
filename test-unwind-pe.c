@@ -1,5 +1,6 @@
 #include "test-unwind-pe.h"
 #include "stdlib.h"
+#include "stdio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,6 +96,7 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
         switch (encoding & 0x0f) {
             case DW_EH_PE_absptr:
                 result = (test_Unwind_Ptr) u->ptr;
+                printf("result1 is %p\n", result);
                 p += sizeof (void *);
                 break;
 
@@ -147,7 +149,9 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
             case DW_EH_PE_textrel:
             case DW_EH_PE_datarel:
             case DW_EH_PE_funcrel:
+            printf("baseX is %p\n", base);
                 result += base;
+            printf("result is %p\n", result);
                 break;
             default:
                 break;

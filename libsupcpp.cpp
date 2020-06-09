@@ -479,7 +479,9 @@ _Unwind_Reason_Code __gxx_personality_v0 (
     struct test_Unwind_Context *context2;
     const unsigned char* fde = find_fde((void *)(throw_ip + 1));
     add_lsda(fde, context2);
-    printf("lsda: %p\n", context2->lsda);
+    void *lsdaa = (void *) _Unwind_GetLanguageSpecificData(context);
+    printf("real lsda: %p\n", lsdaa);
+    //printf("lsda2: %p\n", lsda);
 
     // Go through each call site in this stack frame to check whether
     // the current exception can be handled here

@@ -147,6 +147,7 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
 
     //TODO: if cie_legnth is 0, CIE shall be considered a terminator and the proccesing shall end
     cie_legnth = *cie;
+    printf("cie legnth: %i\n", cie_legnth);
     if(cie_legnth == 0xffffffff)
         cie_id_offset =  12; //Legnth section + extended legnth section
     else 
@@ -155,9 +156,18 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     cie_version = *(cie + cie_id_offset + 4); // cie_version is either 1 or 3
     cie_aug = cie + cie_id_offset + 5;
     printf("cie_version %u\n", cie_version); 
-    p = cie_aug; 
-    p = read_uleb128 (p, &utmp);
-    p = read_sleb128 (p, &stmp);
+    p = cie_aug + strlen ((const char *)cie_aug) + 1; // Skip the augmentation string.
+
+    /* g++ v2 "eh" has pointer immediately following augmentation string,
+       so it must be handled first.  */   
+    if (cie_aug[0] == 'e' && cie_aug[1] == 'h')
+    {
+      p += sizeof (void *);
+      cie_aug += 2;
+    }
+
+    p = read_uleb128 (p, &utmp);    /* Skip code alignment.  */
+    p = read_sleb128 (p, &stmp);    /* Skip data alignment.  */
 
 
     if (cie_version == 1)
@@ -167,7 +177,7 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     lsda_encoding = DW_EH_PE_omit;
     
 
-    unsigned char aug_arr[6]; //hard codded for now (6 is the number of possible letters)
+   /* unsigned char aug_arr[6]; //hard codded for now (6 is the number of possible letters)
     const unsigned char *cie_aug_p = cie_aug; //auxillary pointer to the start of the cie_aug section 
     int i = 0;
 
@@ -179,30 +189,24 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     }
     aug_arr[i] = '\0';
     cie_aug = aug_arr;
+    int j = 0; 
+    for (j; j <= i; j++)
+        printf("value %i: %u\n", j, aug_arr[j]); */
 
-    /* g++ v2 "eh" has pointer immediately following augmentation string,
-       so it must be handled first.  */   
-    if (cie_aug[0] == 'e' && cie_aug[1] == 'h')
-    {
-      p += sizeof (void *);
-      cie_aug += 2;
-    }
     
     /* If the augmentation starts with 'z', then a uleb128 immediately
      follows containing the length of the augmentation field following
      the size.  */
     if (*cie_aug == 'z')
     {
-      p = read_uleb128 (p, &utmp);
+      p = read_uleb128 (p, &utmp);  /* Skip augmentation length.  */
       ++cie_aug;
       z_flag = 1;
     }
 
     while (*cie_aug != '\0')
     {
-        /*printf("cie_aug %s \n", *cie_aug);
-        printf("cie_aug %c \n", *cie_aug);
-        printf("cie_aug %u \n", *cie_aug);*/
+
        /* "L" indicates a byte showing how the LSDA pointer is encoded.  */
       if (cie_aug[0] == 'L')
       {
@@ -223,24 +227,28 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
         printf("P\n");
         test_Unwind_Ptr personality; 
         //p += sizeof (void *);
-        p = read_encoded_value_with_base (*p , 0 , p ,&personality);
+        //p = read_encoded_value_with_base (*p , 0 , p ,&personality);
+        p = read_encoded_value_with_base (*p & 0x7F, 0, p + 1, &personality);
         cie_aug += 1;
       }
       else 
       {
-          printf("here \n");
+          printf("here elseee \n");
           cie_aug +=1; 
       }
     } 
     
     fde_aug = fde + fde_id_offset + 4; //skip legnth and ID sections
-    printf("fde_encoding %u \n",fde_encoding);
+    //fde_aug = fde + sizeof (*fde);
+    printf("fde_aug1 %p \n",fde_aug);
     fde_aug += 2 * size_of_encoded_value (fde_encoding);
+     printf("fde_aug2 %p \n",fde_aug);
     
     if (z_flag)
     {
       _uleb128_t i;
       fde_aug = read_uleb128 (fde_aug, &i);
+      printf("fde_aug3 %p \n",fde_aug);
     }
     
     if (lsda_encoding != DW_EH_PE_omit)
@@ -248,9 +256,10 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
       test_Unwind_Ptr lsda;
        
       test_Unwind_Ptr base = (test_Unwind_Ptr) header.eh_frame;
+      printf("base %p \n", (void *)base);
       fde_aug = read_encoded_value_with_base(lsda_encoding, base, fde_aug, &lsda);
       
-      printf("lsda %p \n", (void *)lsda);
+      printf("generated lsda: %p \n", (void *)lsda);
       //context->lsda = (void *) lsda;
       
     }
