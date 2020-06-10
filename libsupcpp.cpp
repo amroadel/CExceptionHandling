@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <typeinfo>
+#include <unwind.h>
 #include "test-unwind-eh.h"
 #include "test-unwind-pe.h"
 

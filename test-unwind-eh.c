@@ -73,7 +73,7 @@ struct test_Unwind_FrameState
     void *eh_ptr;
 };
 
-/*struct test_Unwind_Context {
+struct test_Unwind_Context {
     void *cfa;
     void *ra;
     void *lsda;
@@ -82,7 +82,7 @@ struct test_Unwind_FrameState
     test_Unwind_Word flags;
     test_Unwind_Word version;
     test_Unwind_Word args_size;
-};*/
+};
 
 
 /* Routines */

@@ -12,7 +12,8 @@ typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 
 /* Data types */
 /*  Reason codes are used to indicate failures or action results  */
-/*typedef enum {
+typedef enum {
+    #ifndef _UNWIND_H
     _URC_NO_REASON = 0,
     _URC_FOREIGN_EXCEPTION_CAUGHT = 1,
     _URC_FATAL_PHASE2_ERROR = 2,
@@ -22,16 +23,19 @@ typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
     _URC_HANDLER_FOUND = 6,
     _URC_INSTALL_CONTEXT = 7,
     _URC_CONTINUE_UNWIND = 8
+    #endif
 } test_Unwind_Reason_Code;
 
 /*  Action was originally and int and separate defines  */
-/*typedef enum {
+typedef enum {
+    #ifndef _UNWIND_H
     _UA_SEARCH_PHASE = 1,
     _UA_CLEANUP_PHASE = 2,
     _UA_HANDLER_FRAME = 4,
     _UA_FORCE_UNWIND = 8,
     _UA_END_OF_STACK = 16    
-} test_Unwind_Action;*/
+    #endif
+} test_Unwind_Action;
 
 struct test_Unwind_Exception;
 
