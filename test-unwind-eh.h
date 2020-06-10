@@ -10,13 +10,24 @@ extern "C" {
 /* Data types*/
 struct eh_frame_hdr;
 struct test_Unwind_FrameState;
+struct test_dwarf_cie;
 typedef struct test_Unwind_FrameState test_Unwind_FrameState;
+typedef struct test_dwarf_fde test_fde; 
+
+typedef unsigned int test_uword;
+typedef int test_sword;
+typedef unsigned char test_ubyte;
+
 
 struct eh_bases {
   void *tbase;
   void *dbase;
   void *func;
 };
+
+
+
+ 
 
 /* Routines */
 void
