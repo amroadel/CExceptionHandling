@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#define __builtin_eh_return_data_regno(x) x // TODO: double check this when you arrive at installing contexts
 #define _DWARF_FRAME_REGISTERS 17
 
 #define _rax 0
