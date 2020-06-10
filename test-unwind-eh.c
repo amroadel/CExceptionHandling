@@ -84,6 +84,21 @@ struct test_Unwind_Context {
     test_Unwind_Word args_size;
 };
 
+struct test_dwarf_cie
+{
+  test_uword length;
+  test_sword CIE_id;
+  test_ubyte version;
+  unsigned char augmentation[];
+};
+
+/* The first few fields of an FDE.  */
+typedef struct test_dwarf_fde
+{
+  test_uword length;
+  test_sword CIE_delta;
+  unsigned char pc_begin[];
+};
 
 /* Routines */
 void
