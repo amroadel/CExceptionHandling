@@ -35,11 +35,19 @@ init_eh_frame_hdr(const unsigned char *eh_frame);
 
 const unsigned char *
 find_fde(void *ra);
-/*void
-fill_context(const unsigned char * fde, struct test_Unwind_Context *context);*/
 
 void
 add_lsda(const unsigned char *fde, struct test_Unwind_Context *context);
+
+static inline const struct test_dwarf_cie *
+test_get_cie (const struct test_dwarf_fde *f);
+
+static const unsigned char *
+test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
+		  test_Unwind_FrameState *fs);
+
+static test_Unwind_Reason_Code
+test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameState *fs);
 
 #ifdef __cplusplus
 }

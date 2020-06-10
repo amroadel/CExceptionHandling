@@ -3,6 +3,7 @@
 #include "dwarf-reg-map-x86_64.h"
 #include "stdlib.h"
 #include "stdio.h" // remember to delete this
+#include <stddef.h> //for memset 
 
 
 #ifdef __cplusplus
@@ -332,6 +333,43 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
       //context->lsda = (void *) lsda;
       
     }
+
+}
+/* Locate the CIE for a given FDE.  */
+
+static inline const struct test_dwarf_cie *
+test_get_cie (const struct test_dwarf_fde *f)
+{
+  return (const void *)&f->CIE_delta - f->CIE_delta;
+}
+
+static const unsigned char *
+test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
+		  test_Unwind_FrameState *fs)
+{
+
+}
+
+static test_Unwind_Reason_Code
+test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
+{
+    const struct test_dwarf_fde *fde;
+    const struct test_dwarf_cie *cie;
+
+    memset (fs, 0, sizeof (*fs));
+    context->args_size = 0;
+    context->lsda = 0;
+
+    if (context->ra == 0)
+        return _URC_END_OF_STACK;
+    
+    fde = find_fde(context->ra, context->bases);
+
+    if (fde == NULL)
+        return _URC_END_OF_STACK;
+
+    fs->pc = context->bases.func;
+    cie = test_get_cie (fde);
 
 }
 #ifdef __cplusplus
