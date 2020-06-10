@@ -10,6 +10,9 @@ extern "C" {
 /* Data types*/
 struct eh_frame_hdr;
 
+struct test_Unwind_FrameState;
+typedef struct test_Unwind_FrameState test_Unwind_FrameState;
+
 struct dwarf_bases {
   void *tbase;
   void *dbase;
