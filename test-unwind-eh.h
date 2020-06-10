@@ -20,11 +20,11 @@ typedef int test_sword;
 typedef unsigned char test_ubyte;
 
 
-struct dwarf_bases {
+struct test_dwarf_eh_bases {
   void *tbase;
   void *dbase;
   void *func;
-} eh_bases; // TODO: add it to the eh_frame_hdr and add the definition to a seperate dwarf library
+}; // TODO: add it to the eh_frame_hdr and add the definition to a seperate dwarf library
 
 /* Routines */
 void

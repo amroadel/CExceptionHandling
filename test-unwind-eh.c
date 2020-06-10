@@ -17,6 +17,7 @@ struct eh_frame_hdr {
     unsigned char entry_encoding;
     const unsigned char *eh_frame;
     int count;
+    struct test_dwarf_eh_bases eh_bases;
     const unsigned char *entries;
 } header;
 
@@ -76,7 +77,7 @@ struct test_Unwind_Context {
     void *cfa;
     void *ra;
     void *lsda;
-    struct dwarf_bases bases;
+    struct test_dwarf_eh_bases bases;
     // keep them for now until we know more about them
     test_Unwind_Word flags;
     test_Unwind_Word version;
@@ -133,9 +134,9 @@ init_eh_frame_hdr(const unsigned char *eh_frame_hdr, const unsigned char *text)
     else
         header.entries = NULL;
 
-    eh_bases.tbase = (void *)text;
-    eh_bases.dbase = (void *)eh_frame_hdr;
-    eh_bases.func = NULL;
+    header.eh_bases.tbase = (void *)text;
+    header.eh_bases.dbase = (void *)eh_frame_hdr;
+    header.eh_bases.func = NULL;
 }
 
 const unsigned char *
