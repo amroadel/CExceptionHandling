@@ -4,7 +4,6 @@
 #include "stdlib.h"
 #include "stdio.h" // remember to delete this
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -77,7 +76,7 @@ struct test_Unwind_Context {
     void *cfa;
     void *ra;
     void *lsda;
-    struct eh_bases bases;
+    struct dwarf_bases bases;
     // keep them for now until we know more about them
     test_Unwind_Word flags;
     test_Unwind_Word version;
@@ -102,7 +101,7 @@ typedef struct test_dwarf_fde
 
 /* Routines */
 void
-init_eh_frame_hdr(const unsigned char *eh_frame_hdr)
+init_eh_frame_hdr(const unsigned char *eh_frame_hdr, const unsigned char *text)
 {
     const unsigned char *p = eh_frame_hdr;
     header.self = p;
@@ -133,10 +132,14 @@ init_eh_frame_hdr(const unsigned char *eh_frame_hdr)
         header.entries = p;
     else
         header.entries = NULL;
+
+    eh_bases.tbase = (void *)text;
+    eh_bases.dbase = (void *)eh_frame_hdr;
+    eh_bases.func = NULL;
 }
 
 const unsigned char *
-find_fde(void *ra)
+find_fde(void *ra) // TODO: add the bases
 {
     if (header.entries == NULL || header.count == 0)
         abort();
@@ -161,7 +164,6 @@ find_fde(void *ra)
             }
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
-            
             if (base > ip) {
                 printf(" case 2 base is %lx\n", base);
                 printf(" ra is %lx\n", ip);
