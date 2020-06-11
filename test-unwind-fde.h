@@ -34,25 +34,32 @@ struct test_dwarf_cie {
     test_uword length;
     test_sword CIE_id;
     test_ubyte version;
-    unsigned char augmentation[];
+    const unsigned char *augmentation;
 }__attribute__((packed, aligned (__alignof__ (void *))));
 
 /* The first few fields of an FDE.  */
 struct test_dwarf_fde {
     test_uword length;
     test_sword CIE_delta;
-    unsigned char pc_begin[];
+    const unsigned char *pc_begin;
 }__attribute__((packed, aligned (__alignof__ (void *))));
+typedef struct test_dwarf_fde test_fde;
 
 /* Routines */
 void
 init_eh_frame_hdr(const unsigned char *eh_frame, const unsigned char *text);
 
-const unsigned char *
-find_fde(void *ra, struct test_dwarf_eh_bases bases);
+inline const struct test_dwarf_cie *
+test_get_cie(const struct test_dwarf_fde *fde);
 
-static inline const struct test_dwarf_cie *
-test_get_cie (const struct test_dwarf_fde *f);
+unsigned char
+test_get_cie_encoding (const struct test_dwarf_cie *cie);
+
+inline unsigned char
+test_get_fde_encoding (const struct test_dwarf_fde *fde);
+
+const test_fde *
+find_fde(void *pc, struct test_dwarf_eh_bases *bases);
 
 #ifdef __cplusplus
 }

@@ -252,7 +252,7 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
     if (context->ra == 0)
         return _URC_END_OF_STACK;
     
-    fde = find_fde(context->ra, context->bases);
+    fde = find_fde(context->ra, &context->bases);
 
     if (fde == NULL)
         return _URC_END_OF_STACK;
