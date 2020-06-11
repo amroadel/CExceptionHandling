@@ -11,8 +11,10 @@ extern "C" {
 struct eh_frame_hdr;
 
 struct test_Unwind_FrameState;
-struct test_dwarf_cie;
 typedef struct test_Unwind_FrameState test_Unwind_FrameState;
+
+struct test_dwarf_cie;
+struct test_dwarf_fde;
 typedef struct test_dwarf_fde test_fde; 
 
 typedef unsigned int test_uword;

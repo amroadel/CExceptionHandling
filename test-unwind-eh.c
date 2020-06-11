@@ -21,8 +21,7 @@ struct eh_frame_hdr {
     const unsigned char *entries;
 } header;
 
-struct test_Unwind_FrameState
-{
+struct test_Unwind_FrameState {
     /* Each register save state can be described in terms of a CFA slot,
         another register, or a location expression.  */
     struct frame_state_reg_info {
@@ -84,21 +83,19 @@ struct test_Unwind_Context {
     test_Unwind_Word args_size;
 };
 
-struct test_dwarf_cie
-{
+struct test_dwarf_cie {
   test_uword length;
   test_sword CIE_id;
   test_ubyte version;
   unsigned char augmentation[];
-};
+}__attribute__((packed, aligned (__alignof__ (void *))));
 
 /* The first few fields of an FDE.  */
-typedef struct test_dwarf_fde
-{
+struct test_dwarf_fde {
   test_uword length;
   test_sword CIE_delta;
   unsigned char pc_begin[];
-};
+}__attribute__((packed, aligned (__alignof__ (void *))));
 
 /* Routines */
 void
