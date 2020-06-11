@@ -1,5 +1,6 @@
 #include "test-unwind.h"
 #include "test-unwind-eh.h"
+#include "test-unwind-fde.h"
 #include "stdlib.h"
 
 #ifdef __cplusplus

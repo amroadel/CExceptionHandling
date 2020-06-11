@@ -1,5 +1,6 @@
 #include "test-unwind-eh.h"
 #include "test-unwind-pe.h"
+#include "test-unwind-fde.h"
 #include "dwarf-reg-map-x86_64.h"
 #include "stdlib.h"
 #include "stdio.h" // remember to delete this
@@ -10,18 +11,6 @@ extern "C" {
 #endif
 
 /* Data types*/
-struct eh_frame_hdr {
-    const unsigned char *self;
-    unsigned char version;
-    unsigned char eh_frame_encoding;
-    unsigned char count_encoding;
-    unsigned char entry_encoding;
-    const unsigned char *eh_frame;
-    int count;
-    struct test_dwarf_eh_bases eh_bases;
-    const unsigned char *entries;
-} header;
-
 struct test_Unwind_FrameState {
     /* Each register save state can be described in terms of a CFA slot,
         another register, or a location expression.  */
@@ -84,99 +73,6 @@ struct test_Unwind_Context {
     test_Unwind_Word args_size;
 };
 
-struct test_dwarf_cie {
-  test_uword length;
-  test_sword CIE_id;
-  test_ubyte version;
-  unsigned char augmentation[];
-}__attribute__((packed, aligned (__alignof__ (void *))));
-
-/* The first few fields of an FDE.  */
-struct test_dwarf_fde {
-  test_uword length;
-  test_sword CIE_delta;
-  unsigned char pc_begin[];
-}__attribute__((packed, aligned (__alignof__ (void *))));
-
-/* Routines */
-void
-init_eh_frame_hdr(const unsigned char *eh_frame_hdr, const unsigned char *text)
-{
-    const unsigned char *p = eh_frame_hdr;
-    header.self = p;
-    header.version = *p++;
-    header.eh_frame_encoding = *p++;
-    header.count_encoding = *p++;
-    header.entry_encoding = *p++;
-
-    test_Unwind_Ptr val;
-
-    if (header.eh_frame_encoding != DW_EH_PE_omit) {
-        p = read_encoded_value_with_base(header.eh_frame_encoding,
-        (test_Unwind_Ptr)eh_frame_hdr, p, &val);
-        header.eh_frame = (const unsigned char *)val;
-    } else {
-        header.eh_frame = NULL;
-    }
-    
-    if (header.count_encoding != DW_EH_PE_omit) {
-        p = read_encoded_value_with_base(header.count_encoding,
-        (test_Unwind_Ptr)eh_frame_hdr, p, &val);
-        header.count = (int)val;
-    } else {
-        header.count = 0;
-    }
-
-    if (header.entry_encoding != DW_EH_PE_omit)
-        header.entries = p;
-    else
-        header.entries = NULL;
-
-    header.eh_bases.tbase = (void *)text;
-    header.eh_bases.dbase = (void *)eh_frame_hdr;
-    header.eh_bases.func = NULL;
-}
-
-const unsigned char *
-find_fde(void *ra) // TODO: add the bases
-{
-    if (header.entries == NULL || header.count == 0)
-        abort();
-    const unsigned char *p = header.entries;
-
-    test_Unwind_Ptr ip = (test_Unwind_Ptr)ra;
-    test_Unwind_Ptr base;
-    test_Unwind_Ptr fde;
-
-    p = read_encoded_value_with_base(header.entry_encoding,
-    (test_Unwind_Ptr)header.self, p, &base);
-    for (int i = 0; i < header.count; i++) {
-        printf(" base is %lx\n", base);
-        p = read_encoded_value_with_base(header.entry_encoding,
-        (test_Unwind_Ptr)header.self, p, &fde);
-
-        if (ip > base) {
-            if (i + 1 == header.count) {
-                printf(" case 1 base is %lx\n", base);
-                printf(" ra is %lx\n", ip);
-                return (const unsigned char *)fde;
-            }
-            p = read_encoded_value_with_base(header.entry_encoding,
-            (test_Unwind_Ptr)header.self, p, &base);
-            if (base > ip) {
-                printf(" case 2 base is %lx\n", base);
-                printf(" ra is %lx\n", ip);
-                return (const unsigned char *)fde;
-            }
-        } else {
-            if (i + 1 == header.count)
-                abort();
-            p = read_encoded_value_with_base(header.entry_encoding,
-            (test_Unwind_Ptr)header.self, p, &base);
-        }            
-    }
-    abort();
-}
 /*static void
 fill_context(const unsigned char * fde, struct test_Unwind_Context *context)
 {
@@ -335,22 +231,15 @@ add_lsda(const unsigned char *fde, struct test_Unwind_Context *context)
     }
 
 }
-/* Locate the CIE for a given FDE.  */
 
-static inline const struct test_dwarf_cie *
-test_get_cie (const struct test_dwarf_fde *f)
-{
-  return (const void *)&f->CIE_delta - f->CIE_delta;
-}
-
-static const unsigned char *
+const unsigned char *
 test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
-		  test_Unwind_FrameState *fs)
+    test_Unwind_FrameState *fs)
 {
 
 }
 
-static test_Unwind_Reason_Code
+test_Unwind_Reason_Code
 test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
 {
     const struct test_dwarf_fde *fde;
@@ -372,6 +261,7 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
     cie = test_get_cie (fde);
 
 }
+
 #ifdef __cplusplus
 }
 #endif
