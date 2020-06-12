@@ -2,7 +2,7 @@
 #define TEST_UNWIND_EH
 
 #include "test-unwind.h"
-#include "test-unwind-fde.h" // remember to remove this if we got rid of test_extract_cie_info dependancy, which is preferable
+#include "test-unwind-fde.h" // TODO: remember to remove this if we got rid of test_extract_cie_info dependancy, which is preferable
 
 #ifdef __cplusplus
 extern "C" {
