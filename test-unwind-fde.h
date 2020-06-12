@@ -37,7 +37,6 @@ struct test_dwarf_cie {
     const unsigned char *augmentation;
 }__attribute__((packed, aligned (__alignof__ (void *))));
 
-/* The first few fields of an FDE.  */
 struct test_dwarf_fde {
     test_uword length;
     test_sword CIE_delta;
