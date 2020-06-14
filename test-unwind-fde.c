@@ -173,6 +173,12 @@ find_fde(void *pc, struct test_dwarf_eh_bases *bases) // TODO: make the search b
     }
 }
 
+inline const test_fde *
+test_next_fde (const test_fde *f)
+{
+  return (const test_fde *) ((const char *) f + f->length + sizeof (f->length));
+}
+
 #ifdef __cplusplus
 }
 #endif
