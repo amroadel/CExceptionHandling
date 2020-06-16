@@ -8,11 +8,17 @@
 extern "C" {
 #endif
 
+typedef void * test_Unwind_Context_Reg_Val;
+typedef unsigned test_Unwind_Internal_Ptr __attribute__((__mode__(__pointer__)));
+
 /* Data types*/
 struct test_Unwind_FrameState;
 typedef struct test_Unwind_FrameState test_Unwind_FrameState;
 
 /* Routines */
+void __attribute__((noinline))
+init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_ra);
+
 void
 add_lsda(const unsigned char *fde, struct test_Unwind_Context *context);
 

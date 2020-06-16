@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#define __builtin_eh_return_data_regno(x) x // TODO: double check this when you arrive at installing contexts
 typedef unsigned test_Unwind_Exception_Class __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
 typedef signed test_Unwind_Sword __attribute__((__mode__(__DI__)));

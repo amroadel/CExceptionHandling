@@ -4,7 +4,7 @@
 #include <unwind.h>
 #include "test-unwind-eh.h"
 #include "test-unwind-pe.h"
-
+#include "test-unwind-fde.h"
 
 
 
@@ -478,7 +478,8 @@ _Unwind_Reason_Code __gxx_personality_v0 (
 
     //test
     struct test_Unwind_Context *context2;
-    const unsigned char* fde = find_fde((void *)(throw_ip + 1));
+    struct test_dwarf_eh_bases *bases;
+    const unsigned char* fde = (const unsigned char*)find_fde((void *)(throw_ip + 1), bases);
     add_lsda(fde, context2);
     void *lsdaa = (void *) _Unwind_GetLanguageSpecificData(context);
     printf("real lsda: %p\n", lsdaa);

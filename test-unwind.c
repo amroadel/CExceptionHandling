@@ -1,11 +1,13 @@
 #include "test-unwind.h"
 #include "test-unwind-eh.h"
+#include "dwarf-reg-map-x86_64.h"
 #include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Data types*/
 typedef void (*test_Unwind_Exception_Cleanup_Fn)
     (test_Unwind_Reason_Code,
     struct test_Unwind_Exception *);
@@ -18,15 +20,25 @@ struct test_Unwind_Exception {
 };
 
 struct test_Unwind_Context {
+    test_Unwind_Context_Reg_Val reg[_DWARF_FRAME_REGISTERS];
     void *cfa;
     void *ra;
     void *lsda;
     struct test_dwarf_eh_bases bases;
-    // keep them for now until we know more about them
+    
+    #define SIGNAL_FRAME_BIT ((~(test_Unwind_Word)0 >> 1) + 1)
+    #define EXTENDED_CONTEXT_BIT ((~(test_Unwind_Word)0 >> 2) + 1)
     test_Unwind_Word flags;
     test_Unwind_Word version;
     test_Unwind_Word args_size;
 };
+
+/* Routines */
+#define uw_init_context(CONTEXT)                                                \
+do {                                                                            \
+    __builtin_unwind_init();                                                    \
+    init_context(CONTEXT, __builtin_dwarf_cfa(), __builtin_return_address(0));  \
+} while (0) //TODO: unwind_init appears to be practicallly useless. Try it once the library is done
 
 test_Unwind_Reason_Code
 test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
