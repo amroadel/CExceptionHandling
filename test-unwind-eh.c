@@ -10,57 +10,8 @@
 extern "C" {
 #endif
 
-/* Data types */
-struct test_Unwind_FrameState {
-    /* Each register save state can be described in terms of a CFA slot,
-        another register, or a location expression. */
-    struct frame_state_reg_info {
-        struct {
-            union {
-                test_Unwind_Word reg;
-                test_Unwind_Sword offset;
-                const unsigned char *exp;
-            } loc;
-            enum {
-                REG_UNSAVED,
-                REG_SAVED_OFFSET,
-                REG_SAVED_REG,
-                REG_SAVED_EXP,
-                REG_SAVED_VAL_OFFSET,
-                REG_SAVED_VAL_EXP,
-                REG_UNDEFINED
-            } how;
-        } reg[_DWARF_FRAME_REGISTERS];
-
-        /* Used to implement DW_CFA_remember_state.  */
-        struct frame_state_reg_info *prev;
-
-        /* The CFA can be described in terms of a reg+offset or a
-            location expression.  */
-        test_Unwind_Sword cfa_offset;
-        test_Unwind_Word cfa_reg;
-        const unsigned char *cfa_exp;
-        enum {
-            CFA_UNSET,
-            CFA_REG_OFFSET,
-            CFA_EXP
-        } cfa_how;
-    } regs;
-
-    /* The PC described by the current frame state.  */
-    void *pc;
-
-    /* The information we care about from the CIE/FDE.  */
-    test_Unwind_Personality_Fn personality;
-    test_Unwind_Sword data_align;
-    test_Unwind_Word code_align;
-    test_Unwind_Word retaddr_column;
-    unsigned char fde_encoding;
-    unsigned char lsda_encoding;
-    unsigned char saw_z;
-    unsigned char signal_frame;
-    void *eh_ptr;
-};
+/* Data types*/
+//Removed frame_state struct from here to fde.h
 
 struct test_Unwind_Context {
     test_Unwind_Context_Reg_Val reg[_DWARF_FRAME_REGISTERS];
@@ -157,6 +108,21 @@ test_Unwind_GRByValue(struct test_Unwind_Context *context, int index)
 {
     index = _DWARF_REG_TO_UNWIND_COLUMN(index);
     return context->by_value[index];
+}
+
+/* Dwarf Interpreter */
+void
+test_execute_cfa_program(const unsigned char *insn_ptr, const unsigned char *insn_end,
+    struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
+{
+
+}
+
+test_Unwind_Word
+test_execute_stack_op(const unsigned char *op_ptr, const unsigned char *op_end,
+    struct test_Unwind_Context *context, test_Unwind_Word initial)
+{
+
 }
 
 /* Context management */
@@ -436,6 +402,104 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
     test_Unwind_FrameState *fs)
 {
 
+    const unsigned char *aug = cie->augmentation;
+    const unsigned char *p = aug + strlen ((const char *)aug) + 1;
+    const unsigned char *ret = NULL;
+    _uleb128_t utmp;
+    _sleb128_t stmp;
+
+    /* g++ v2 "eh" has pointer immediately following augmentation string,
+        so it must be handled first.  */
+    if (aug[0] == 'e' && aug[1] == 'h')
+    {
+        //fs->eh_ptr = read_pointer (p); //TODO: Check for read_pointer()
+        fs->eh_ptr = (void *)p;
+        p += sizeof (void *);
+        aug += 2;
+    }
+
+  /* After the augmentation resp. pointer for "eh" augmentation
+     follows for CIE version >= 4 address size byte and
+     segment size byte.  */
+  if (cie->version >= 4)
+    {
+      if (p[0] != sizeof (void *) || p[1] != 0)
+	    return NULL;
+      p += 2;
+    }
+    /* Immediately following this are the code and
+        data alignment and return address column.  */
+    p = read_uleb128 (p, &utmp);
+    fs->code_align = (test_Unwind_Word)utmp;
+    p = read_sleb128 (p, &stmp);
+    fs->data_align = (test_Unwind_Sword)stmp;
+    if (cie->version == 1)
+        fs->retaddr_column = *p++;
+    else
+        {
+        p = read_uleb128 (p, &utmp);
+        fs->retaddr_column = (test_Unwind_Word)utmp;
+        }
+    fs->lsda_encoding = DW_EH_PE_omit;
+
+    /* If the augmentation starts with 'z', then a uleb128 immediately
+        follows containing the length of the augmentation field following
+        the size.  */
+    if (*aug == 'z')
+        {
+        p = read_uleb128 (p, &utmp);
+        ret = p + utmp;
+
+        fs->saw_z = 1;
+        ++aug;
+        }
+
+    /* Iterate over recognized augmentation subsequences.  */
+    while (*aug != '\0')
+        {
+        /* "L" indicates a byte showing how the LSDA pointer is encoded.  */
+        if (aug[0] == 'L')
+        {
+        fs->lsda_encoding = *p++;
+        aug += 1;
+        }
+
+        /* "R" indicates a byte indicating how FDE addresses are encoded.  */
+        else if (aug[0] == 'R')
+        {
+        fs->fde_encoding = *p++;
+        aug += 1;
+        }
+
+        /* "P" indicates a personality routine in the CIE augmentation.  */
+        else if (aug[0] == 'P')
+        {
+        test_Unwind_Ptr personality;
+
+        p = read_encoded_value (context, *p, p + 1, &personality);
+        fs->personality = (test_Unwind_Personality_Fn) personality;
+        aug += 1;
+        }
+
+        /* "S" indicates a signal frame.  */
+        else if (aug[0] == 'S')
+        {
+        fs->signal_frame = 1;
+        aug += 1;
+        }
+        /* aarch64 B-key pointer authentication.  */
+        else if (aug[0] == 'B')
+        {
+        aug += 1;
+        }
+
+        /* Otherwise we have an unknown augmentation string.
+        Bail unless we saw a 'z' prefix.  */
+        else
+        return ret;
+        }
+
+    return ret ? ret : p;
 }
 
 test_Unwind_Reason_Code
@@ -443,6 +507,7 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
 {
     const struct test_dwarf_fde *fde;
     const struct test_dwarf_cie *cie;
+    const unsigned char *aug, *insn, *end;
 
     memset (fs, 0, sizeof (*fs));
     context->args_size = 0;
@@ -458,6 +523,43 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
 
     fs->pc = context->bases.func;
     cie = test_get_cie (fde);
+    insn = test_extract_cie_info (cie, context, fs);
+    if (insn == NULL)
+        /* CIE contained unknown augmentation.  */
+        return _URC_FATAL_PHASE1_ERROR;
+
+    /* First decode all the insns in the CIE.  */
+    end = (const unsigned char *) test_next_fde ((const struct test_dwarf_fde *) cie);
+    //test_execute_cfa_program (insn, end, context, fs);
+
+    /* Locate augmentation for the fde.  */
+    aug = (const unsigned char *) fde + sizeof (*fde);
+    aug += 2 * size_of_encoded_value (fs->fde_encoding);
+    insn = NULL;
+
+    if (fs->saw_z)
+    {
+        _uleb128_t i;
+        aug = read_uleb128 (aug, &i);
+        insn = aug + i;
+    }
+
+    if (fs->lsda_encoding != DW_EH_PE_omit)
+    {
+        test_Unwind_Ptr lsda;
+
+        aug = read_encoded_value (context, fs->lsda_encoding, aug, &lsda);
+        context->lsda = (void *) lsda;
+        printf("generated lsda: %p\n", lsda);
+    }
+
+    /* Then the insns in the FDE up to our target PC.  */
+    if (insn == NULL)
+        insn = aug;
+    end = (const unsigned char *) test_next_fde (fde);
+    //test_execute_cfa_program (insn, end, context, fs);
+
+    return _URC_NO_REASON;
 
 }
 

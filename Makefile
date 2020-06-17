@@ -4,13 +4,14 @@ dir = ./
 src = ./
 inc = ./
 unwind_objects = $(build)test-unwind.o $(build)test-unwind-pe.o $(build)test-unwind-eh.o 
-libsupcpp_objects = $(build)libsupcpp.o $(build)read_elf.o $(build)test-unwind-eh.o $(build)test-unwind-pe.o
+libsupcpp_objects = $(build)libsupcpp.o $(build)read_elf.o $(build)test-unwind-eh.o $(build)test-unwind-pe.o $(build)test-unwind-fde.o
 test_unwind_objects = $(build)unwind.o $(build)read_elf.o  $(unwind_objects) $(build)exception_t.o
 test_libsupcpp_objects = $(build)seppuku.o $(build)throw.o $(libsupcpp_objects)
 aux = $(build)throw.gas $(build)throw.s
 options = -ggdb
 
-build: test_unwind
+#build: test_unwind
+build: test_libsupcpp
 
 test_unwind: $(test_unwind_objects)
 	g++ $(options) $(test_unwind_objects) -o $(build)test_unwind.out
@@ -54,6 +55,9 @@ $(build)throw.o: $(test)throw.cpp $(test)throw.h
 
 $(build)seppuku.o: $(test)seppuku.c
 	gcc -c $(options) $(test)seppuku.c -o $(build)seppuku.o
+
+$(build)test-unwind-fde.o: $(test)test-unwind-fde.c
+	gcc -c $(options) $(test)test-unwind-fde.c -o $(build)test-unwind-fde.o
 
 
 # aux

@@ -481,6 +481,12 @@ _Unwind_Reason_Code __gxx_personality_v0 (
     struct test_dwarf_eh_bases *bases;
     const unsigned char* fde = (const unsigned char*)find_fde((void *)(throw_ip + 1), bases);
     add_lsda(fde, context2);
+    
+    test_Unwind_FrameState *fs;
+    test_Unwind_Reason_Code code;
+    //const unsigned char* fde = find_fde((void *)(throw_ip + 1));
+    //add_lsda(fde, context2);
+    code = test_uw_frame_state_for(context2, fs);
     void *lsdaa = (void *) _Unwind_GetLanguageSpecificData(context);
     printf("real lsda: %p\n", lsdaa);
     //printf("lsda2: %p\n", lsda);
