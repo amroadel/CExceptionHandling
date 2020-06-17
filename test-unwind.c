@@ -31,10 +31,11 @@ struct test_Unwind_Context {
     test_Unwind_Word flags;
     test_Unwind_Word version;
     test_Unwind_Word args_size;
+    char by_value[_DWARF_FRAME_REGISTERS];
 };
 
 /* Routines */
-#define uw_init_context(CONTEXT)                                                \
+#define test_uw_init_context(CONTEXT)                                           \
 do {                                                                            \
     __builtin_unwind_init();                                                    \
     init_context(CONTEXT, __builtin_dwarf_cfa(), __builtin_return_address(0));  \

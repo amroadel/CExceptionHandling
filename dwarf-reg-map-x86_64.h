@@ -16,8 +16,8 @@ extern "C" {
 #define _rdi 5
 #define _rbp 6
 #define _rsp 7
-#define _r08 8
-#define _r09 9
+#define _r8  8
+#define _r9  9
 #define _r10 10
 #define _r11 11
 #define _r12 12
