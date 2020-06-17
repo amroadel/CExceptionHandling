@@ -2,32 +2,30 @@
 #define TEST_UNWIND_EH
 
 #include "test-unwind.h"
-#include "test-unwind-fde.h" // TODO: remember to remove this if we got rid of test_extract_cie_info dependancy, which is preferable
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef void * test_Unwind_Context_Reg_Val;
+typedef unsigned test_Unwind_Internal_Ptr __attribute__((__mode__(__pointer__)));
 
 /* Data types*/
 struct test_Unwind_FrameState_t;
 typedef struct test_Unwind_FrameState_t test_Unwind_FrameState;
 
 /* Routines */
+#define test_uw_init_context(CONTEXT)                                           \
+do {                                                                            \
+    __builtin_unwind_init();                                                    \
+    init_context(CONTEXT, __builtin_dwarf_cfa(), __builtin_return_address(0));  \
+} while (0) //TODO: unwind_init appears to be practicallly useless. Try it once the library is done
+
+void __attribute__((noinline))
+init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_ra);
+
 void
 add_lsda(const unsigned char *fde, struct test_Unwind_Context *context);
-
-inline test_Unwind_Word
-test_Unwind_IsSignalFrame (struct test_Unwind_Context *context);
-
-/* Decode DWARF 2 call frame information. Takes pointers the
-   instruction sequence to decode, current register information and
-   CIE info, and the PC range to evaluate.  */
-
-void
-test_execute_cfa_program (const unsigned char *insn_ptr,
-		     const unsigned char *insn_end,
-		     struct test_Unwind_Context *context,
-		     test_Unwind_FrameState *fs);
 
 test_Unwind_Reason_Code
 test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState *fs);

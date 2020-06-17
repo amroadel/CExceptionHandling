@@ -39,9 +39,6 @@ typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 unsigned int
 size_of_encoded_value(unsigned char encoding);
 
-test_Unwind_Ptr
-base_of_encoded_value(unsigned char encoding, struct test_Unwind_Context *context);
-
 const unsigned char *
 read_uleb128(const unsigned char *p, _uleb128_t *val);
 
@@ -51,6 +48,9 @@ read_sleb128(const unsigned char *p, _sleb128_t *val);
 const unsigned char *
 read_encoded_value_with_base(unsigned char encoding, test_Unwind_Ptr base,
 	const unsigned char *p, test_Unwind_Ptr *val);
+
+test_Unwind_Ptr
+base_of_encoded_value(unsigned char encoding, struct test_Unwind_Context *context);
 
 inline const unsigned char *
 read_encoded_value(struct test_Unwind_Context *context, unsigned char encoding,
