@@ -2,7 +2,6 @@
 #define TEST_UNWIND_FDE
 
 #include "test-unwind.h"
-#include "dwarf-reg-map-x86_64.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,57 +17,6 @@ struct test_dwarf_eh_bases {
     void *dbase;
     void *func;
 };
-
-typedef struct test_Unwind_FrameState_t {
-    /* Each register save state can be described in terms of a CFA slot,
-        another register, or a location expression.  */
-    struct frame_state_reg_info {
-        struct {
-            union {
-                test_Unwind_Word reg;
-                test_Unwind_Sword offset;
-                const unsigned char *exp;
-            } loc;
-            enum {
-                REG_UNSAVED,
-                REG_SAVED_OFFSET,
-                REG_SAVED_REG,
-                REG_SAVED_EXP,
-                REG_SAVED_VAL_OFFSET,
-                REG_SAVED_VAL_EXP,
-                REG_UNDEFINED
-            } how;
-        } reg[_DWARF_FRAME_REGISTERS];
-
-        /* Used to implement DW_CFA_remember_state.  */
-        struct frame_state_reg_info *prev;
-
-        /* The CFA can be described in terms of a reg+offset or a
-            location expression.  */
-        test_Unwind_Sword cfa_offset;
-        test_Unwind_Word cfa_reg;
-        const unsigned char *cfa_exp;
-        enum {
-            CFA_UNSET,
-            CFA_REG_OFFSET,
-            CFA_EXP
-        } cfa_how;
-    } regs;
-
-    /* The PC described by the current frame state.  */
-    void *pc;
-
-    /* The information we care about from the CIE/FDE.  */
-    test_Unwind_Personality_Fn personality;
-    test_Unwind_Sword data_align;
-    test_Unwind_Word code_align;
-    test_Unwind_Word retaddr_column;
-    unsigned char fde_encoding;
-    unsigned char lsda_encoding;
-    unsigned char saw_z;
-    unsigned char signal_frame;
-    void *eh_ptr;
-}test_Unwind_FrameState;
 
 struct eh_frame_hdr {
     const unsigned char *self;
