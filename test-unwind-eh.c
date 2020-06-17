@@ -367,7 +367,16 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
     return _URC_NO_REASON;
 
 }
+typedef union { test_Unwind_Ptr ptr; test_Unwind_Word word; } test_Unwind_SpTmp;
+#define __builtin_dwarf_sp_column() 7 // this is in the case of x86_64 arch(our case). Other cases are found at unwind-pnacl.h
 
+long
+test_uw_install_context_1 (struct test_Unwind_Context *current, struct test_Unwind_Context *target)
+{
+    long i; 
+    test_Unwind_SpTmp sp_slot; 
+    
+}
 #ifdef __cplusplus
 }
 #endif
