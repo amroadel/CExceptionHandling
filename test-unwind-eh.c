@@ -70,6 +70,96 @@ test_Unwind_IsExtendedContext(struct test_Unwind_Context *context)
         || (context->flags & EXTENDED_CONTEXT_BIT));
 }
 
+/* Unwind setters and getters */
+test_Unwind_Word
+test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
+{
+    int size, index;
+    test_Unwind_Context_Reg_Val val;
+
+    #ifdef DWARF_ZERO_REG
+    if (regno == DWARF_ZERO_REG)
+        return 0;
+    #endif
+
+    index = _DWARF_REG_TO_UNWIND_COLUMN(index);
+    size = dwarf_reg_size_table[index];
+    val = context->reg[index];
+
+    if (test_Unwind_IsExtendedContext(context) && context->by_value[index])
+        return _Unwind_Get_Unwind_Word (val);
+
+    /* Special Handling: aarch64 needs modification for lazy register values */
+
+    if (size == sizeof(test_Unwind_Ptr))
+        return *(test_Unwind_Ptr *)(test_Unwind_Internal_Ptr)val;
+    else
+        return *(test_Unwind_Word *)(test_Unwind_Internal_Ptr)val;
+}
+
+void
+test_Unwind_SetGR(struct test_Unwind_Context *context, int index, test_Unwind_Word val)
+{
+    int size;
+    void *p;
+
+    index = _DWARF_REG_TO_UNWIND_COLUMN(index);
+    size = dwarf_reg_size_table[index];
+
+    if (test_Unwind_IsExtendedContext(context) && context->by_value[index]) {
+        context->reg[index] = test_Unwind_Get_Unwind_Context_Reg_Val (val);
+        return;
+    }
+
+    p = (void *)(test_Unwind_Internal_Ptr)context->reg[index];
+    if (size == sizeof(test_Unwind_Ptr))
+        *(test_Unwind_Ptr *)p = val;
+    else
+        *(test_Unwind_Word *)p = val;
+}
+
+test_Unwind_Ptr
+test_Unwind_GetIP(struct test_Unwind_Context *context)
+{
+    return (test_Unwind_Ptr) context->ra;
+}
+
+void
+test_Unwind_SetIP(struct test_Unwind_Context *context, test_Unwind_Ptr val)
+{
+    context->ra = (void *)val;
+}
+
+test_Unwind_Word
+test_Unwind_GetCFA(struct test_Unwind_Context *context)
+{
+    return (test_Unwind_Word) context->cfa;
+}
+
+test_Unwind_Ptr
+test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *context)
+{
+    return (test_Unwind_Ptr) context->lsda;
+}
+
+test_Unwind_Ptr
+test_Unwind_GetRegionStart(struct test_Unwind_Context *context)
+{
+    return (test_Unwind_Ptr) context->bases.func;
+}
+
+test_Unwind_Ptr
+test_Unwind_GetTextRelBase(struct test_Unwind_Context *context)
+{
+    return (test_Unwind_Ptr) context->bases.tbase;
+}
+
+test_Unwind_Ptr
+test_Unwind_GetDataRelBase(struct test_Unwind_Context *context)
+{
+    return (test_Unwind_Ptr) context->bases.dbase;
+}
+
 /* Gerneral Register management */
 inline void *
 test_Unwind_GetPtr(struct test_Unwind_Context *context, int index)
@@ -133,7 +223,7 @@ update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
     void *cfa;
     long i;
 
-    /* Special handling here for some machines: check gcc equivelant */
+    /* Special Handling: check gcc equivelant */
 
     /* Compute the CFA */
     switch (fs->regs.cfa_how) {
@@ -211,6 +301,7 @@ init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_r
     void *ra = __builtin_extract_return_addr(__builtin_return_address(0));
     test_Unwind_FrameState fs;
 
+    context = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
     memset(context, 0, sizeof(struct test_Unwind_Context));
     context->ra = ra;
     if (!ASSUME_EXTENDED_UNWIND_CONTEXT)
@@ -509,7 +600,8 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
     const struct test_dwarf_cie *cie;
     const unsigned char *aug, *insn, *end;
 
-    memset (fs, 0, sizeof (*fs));
+    fs = (test_Unwind_FrameState *)malloc(sizeof(test_Unwind_FrameState));
+    memset (fs, 0, sizeof(test_Unwind_FrameState));
     context->args_size = 0;
     context->lsda = 0;
 
