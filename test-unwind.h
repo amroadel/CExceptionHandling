@@ -10,6 +10,7 @@ typedef unsigned test_Unwind_Exception_Class __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
 typedef signed test_Unwind_Sword __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
+typedef unsigned test_Unwind_Internal_Ptr __attribute__((__mode__(__pointer__)));
 
 /* Data types */
 /*  Reason codes are used to indicate failures or action results  */
