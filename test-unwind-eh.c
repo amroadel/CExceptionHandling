@@ -10,7 +10,9 @@
 extern "C" {
 #endif
 
-#define STACK_GROWS_DOWNWARD 0  // TODO: This needs more resreach
+#ifndef __STACK_GROWS_DOWNWARD__    // TODO: This needs more resreach
+#define __STACK_GROWS_DOWNWARD__ 0
+#endif
 
 /* Data types*/
 typedef struct test_Unwind_FrameState_t {
@@ -70,7 +72,6 @@ struct test_Unwind_Context {
     void *ra;
     void *lsda;
     struct test_dwarf_eh_bases bases;
-    
     #define SIGNAL_FRAME_BIT ((~(test_Unwind_Word)0 >> 1) + 1)
     #define EXTENDED_CONTEXT_BIT ((~(test_Unwind_Word)0 >> 2) + 1)
     test_Unwind_Word flags;
@@ -78,6 +79,11 @@ struct test_Unwind_Context {
     test_Unwind_Word args_size;
     char by_value[_DWARF_FRAME_REGISTERS];
 };
+
+typedef union {
+    test_Unwind_Ptr ptr;
+    test_Unwind_Word word;
+} test_Unwind_SpTmp;
 
 unsigned char dwarf_reg_size_table[_DWARF_FRAME_REGISTERS];
 
@@ -121,6 +127,18 @@ test_Unwind_IsExtendedContext(struct test_Unwind_Context *context)
         || (context->flags & EXTENDED_CONTEXT_BIT));
 }
 
+inline void
+test_Unwind_SetSpColumn(struct test_Unwind_Context *context, void *cfa,
+	test_Unwind_SpTmp *tmp_sp)
+{
+    int size = dwarf_reg_size_table[_builtin_dwarf_sp_column()];
+    if (size == sizeof(test_Unwind_Ptr))
+        tmp_sp->ptr = (test_Unwind_Ptr) cfa;
+    else
+        tmp_sp->word = (test_Unwind_Ptr) cfa;
+    test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column(), tmp_sp);
+}
+
 /* Unwind setters and getters */
 test_Unwind_Word
 test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
@@ -138,7 +156,7 @@ test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
     val = context->reg[index];
 
     if (test_Unwind_IsExtendedContext(context) && context->by_value[index])
-        return _Unwind_Get_Unwind_Word (val);
+        return test_Unwind_Get_Unwind_Word (val);
 
     /* Special Handling: aarch64 needs modification for lazy register values */
 
@@ -351,6 +369,7 @@ _init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_
 {
     void *ra = __builtin_extract_return_addr(__builtin_return_address(0));
     test_Unwind_FrameState fs;
+    test_Unwind_SpTmp sp_slot;
 
     context = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
     memset(context, 0, sizeof(struct test_Unwind_Context));
@@ -364,13 +383,7 @@ _init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_
         _builtin_init_dwarf_reg_size_table(dwarf_reg_size_table);
 
     /* Force the frame state to use the known cfa value.  */ //TODO: we should check why??
-    if (dwarf_reg_size_table[_builtin_dwarf_sp_column()] == sizeof(test_Unwind_Ptr)) {
-        test_Unwind_Ptr sp = (test_Unwind_Internal_Ptr)outer_cfa;
-        test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column (), &sp);
-    } else {
-        test_Unwind_Word sp = (test_Unwind_Internal_Ptr)outer_cfa;
-        test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column (), &sp);
-    }
+    test_Unwind_SetSpColumn(context, outer_cfa, &sp_slot);
     fs.regs.cfa_how = CFA_REG_OFFSET;
     fs.regs.cfa_reg = _builtin_dwarf_sp_column();
     fs.regs.cfa_offset = 0;
@@ -397,7 +410,7 @@ inline test_Unwind_Ptr
 test_uw_identify_context(struct test_Unwind_Context *context)
 {
     // TODO: This needs more resreach
-    if (STACK_GROWS_DOWNWARD)
+    if (__STACK_GROWS_DOWNWARD__)
         return test_Unwind_GetCFA(context) - test_Unwind_IsSignalFrame (context);
     else
         return test_Unwind_GetCFA(context) + test_Unwind_IsSignalFrame (context);
@@ -410,6 +423,7 @@ uw_copy_context(struct test_Unwind_Context *target, struct test_Unwind_Context *
     memcpy(target, source, sizeof(struct test_Unwind_Context));
 }
 
+/* Frame State management */
 const unsigned char *
 test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
     test_Unwind_FrameState *fs)
@@ -583,6 +597,62 @@ uw_get_personality(test_Unwind_FrameState *fs)
     return fs->personality;
 }
 
+long
+test_uw_install_context_1 (struct test_Unwind_Context *current, struct test_Unwind_Context *target)
+{
+    long i; 
+    test_Unwind_SpTmp sp_slot; 
+
+    /* If the target frame does not have a saved stack pointer,
+     then set up the target's CFA.  */
+    if (!test_Unwind_GetGRPtr (target, _builtin_dwarf_sp_column()))
+        test_Unwind_SetSpColumn (target, target->cfa, &sp_slot); //TODO: recheck this, it is using an empty pointer to fill an empty cfa column
+
+    for (i = 0; i < _DWARF_FRAME_REGISTERS; ++i)
+        {
+            void *c = (void *) (test_Unwind_Internal_Ptr) current->reg[i];
+            void *t = (void *) (test_Unwind_Internal_Ptr)target->reg[i];
+
+            //gcc_assert (current->by_value[i] == 0);
+                
+            if (target->by_value[i] && c)
+            {
+                test_Unwind_Word w;
+                test_Unwind_Ptr p;
+                if (dwarf_reg_size_table[i] == sizeof (test_Unwind_Word))
+                {
+                    w = (test_Unwind_Internal_Ptr) t;
+                    memcpy (c, &w, sizeof (test_Unwind_Word));
+                }
+                else
+                {
+                    //gcc_assert (dwarf_reg_size_table[i] == sizeof (test_Unwind_Ptr));
+                    p = (test_Unwind_Internal_Ptr) t;
+                    memcpy (c, &p, sizeof (test_Unwind_Ptr));
+                }
+            }
+            else if (t && c && t != c)
+            memcpy (c, t, dwarf_reg_size_table[i]);
+        }
+
+    /* If the current frame doesn't have a saved stack pointer, then we
+        need to rely on EH_RETURN_STACKADJ_RTX to get our target stack
+        pointer value reloaded.  */
+    if (!test_Unwind_GetGRPtr (current, _builtin_dwarf_sp_column()))
+        {
+            void *target_cfa;
+
+            target_cfa = test_Unwind_GetPtr (target, _builtin_dwarf_sp_column());
+
+            /* We adjust SP by the difference between CURRENT and TARGET's CFA.  */
+            if (__STACK_GROWS_DOWNWARD__)
+            return target_cfa - current->cfa + target->args_size;
+            else
+            return current->cfa - target_cfa - target->args_size;
+        }
+    return 0;
+    
+}
 #ifdef __cplusplus
 }
 #endif
