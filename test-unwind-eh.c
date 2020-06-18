@@ -3,8 +3,8 @@
 #include "test-unwind-fde.h"
 #include "dwarf-reg-map-x86_64.h"
 #include "stdlib.h"
-#include "stdio.h" // remember to delete this
-#include "string.h" // for memset and memcpy 
+#include "stdio.h" //TODO: remember to delete this
+#include "string.h" //TODO: for memset and memcpy 
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +14,7 @@ extern "C" {
 #define __STACK_GROWS_DOWNWARD__ 0
 #endif
 
-/* Data types*/
+/*  Data types*/
 typedef struct test_Unwind_FrameState_t {
     /*  Each register save state can be described in terms of a CFA slot,
         another register, or a location expression  */
@@ -36,7 +36,7 @@ typedef struct test_Unwind_FrameState_t {
             } how;
         } reg[_DWARF_FRAME_REGISTERS];
 
-        /* Used to implement DW_CFA_remember_state.  */
+        /*  Used to implement DW_CFA_remember_state.  */
         struct frame_state_reg_info *prev;
 
         /*  The CFA can be described in terms of a reg+offset or a
@@ -51,10 +51,10 @@ typedef struct test_Unwind_FrameState_t {
         } cfa_how;
     } regs;
 
-    /* The PC described by the current frame state.  */
+    /*  The PC described by the current frame state.  */
     void *pc;
 
-    /* The information we care about from the CIE/FDE.  */
+    /*  The information we care about from the CIE/FDE.  */
     test_Unwind_Personality_Fn personality;
     test_Unwind_Sword data_align;
     test_Unwind_Word code_align;
@@ -87,8 +87,8 @@ typedef union {
 
 unsigned char dwarf_reg_size_table[_DWARF_FRAME_REGISTERS];
 
-/* Routines */
-/* Unwind support functions */
+/*  Routines  */
+/*  Unwind support functions  */
 static inline test_Unwind_Word
 test_Unwind_Get_Unwind_Word(test_Unwind_Context_Reg_Val val)
 {
@@ -139,7 +139,7 @@ test_Unwind_SetSpColumn(struct test_Unwind_Context *context, void *cfa,
     test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column(), tmp_sp);
 }
 
-/* Unwind setters and getters */
+/*  Unwind setters and getters  */
 test_Unwind_Word
 test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
 {
@@ -158,7 +158,7 @@ test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
     if (test_Unwind_IsExtendedContext(context) && context->by_value[index])
         return test_Unwind_Get_Unwind_Word (val);
 
-    /* Special Handling: aarch64 needs modification for lazy register values */
+    /*  Special Handling: aarch64 needs modification for lazy register values  */
 
     if (size == sizeof(test_Unwind_Ptr))
         return *(test_Unwind_Ptr *)(test_Unwind_Internal_Ptr)val;
@@ -229,7 +229,7 @@ test_Unwind_GetDataRelBase(struct test_Unwind_Context *context)
     return (test_Unwind_Ptr) context->bases.dbase;
 }
 
-/* Gerneral Register management */
+/*  Gerneral Register management  */
 static inline void *
 test_Unwind_GetPtr(struct test_Unwind_Context *context, int index)
 {
@@ -269,7 +269,7 @@ test_Unwind_GRByValue(struct test_Unwind_Context *context, int index)
     return context->by_value[index];
 }
 
-/* Dwarf Interpreter */
+/*  Dwarf Interpreter  */
 void
 test_execute_cfa_program(const unsigned char *insn_ptr, const unsigned char *insn_end,
     struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
@@ -284,7 +284,7 @@ test_execute_stack_op(const unsigned char *op_ptr, const unsigned char *op_end,
 
 }
 
-/* Context management */
+/*  Context management  */
 void
 _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
 {
@@ -292,9 +292,9 @@ _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
     void *cfa;
     long i;
 
-    /* Special Handling: check gcc equivelant */
+    /*  Special Handling: check gcc equivelant  */
 
-    /* Compute the CFA */
+    /*  Compute the CFA  */
     switch (fs->regs.cfa_how) {
     case CFA_REG_OFFSET:
         cfa = test_Unwind_GetPtr(&orig_context, fs->regs.cfa_reg);
@@ -312,7 +312,7 @@ _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
     }
     context->cfa = cfa;
 
-    /* Compute all registers */
+    /*  Compute all registers  */
     for (i = 0; i < _DWARF_FRAME_REGISTERS + 1; ++i)
         switch (fs->regs.reg[i].how) {
         case REG_UNSAVED:
@@ -356,7 +356,7 @@ _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
     test_Unwind_SetSignalFrame (context, fs->signal_frame);
 
     #ifdef MD_FROB_UPDATE_CONTEXT //TODO: need to look more into when this is true
-    /* checking for sigreturn() */
+    /*  checking for sigreturn()  */
     if ((pc[0] == 0x38007777 || pc[0] == 0x38000077
         || pc[0] == 0x38006666 || pc[0] == 0x380000AC)
         && pc[1] == 0x44000002)
@@ -382,7 +382,7 @@ _init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_
     if (dwarf_reg_size_table[0] == 0)
         _builtin_init_dwarf_reg_size_table(dwarf_reg_size_table);
 
-    /* Force the frame state to use the known cfa value.  */ //TODO: we should check why??
+    /*  Force the frame state to use the known cfa value.  */ //TODO: we should check why??
     test_Unwind_SetSpColumn(context, outer_cfa, &sp_slot);
     fs.regs.cfa_how = CFA_REG_OFFSET;
     fs.regs.cfa_reg = _builtin_dwarf_sp_column();
@@ -391,7 +391,7 @@ _init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_
     _update_context(context, &fs);
 
     context->ra = __builtin_extract_return_addr(outer_ra);
-    /* Special Handling: aarch64 needs modification for return address value */
+    /*  Special Handling: aarch64 needs modification for return address value  */
 }
 
 void
@@ -400,10 +400,10 @@ test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameSta
     _update_context(context, fs);
 
     if (fs->regs.reg[_DWARF_REG_TO_UNWIND_COLUMN(fs->retaddr_column)].how == REG_UNDEFINED)
-        context->ra = 0;    /* outermost stack frame */
+        context->ra = 0;    /*  outermost stack frame  */
     else
         context->ra = __builtin_extract_return_addr(test_Unwind_GetPtr(context, fs->retaddr_column));
-    /* Special Handling: aarch64 needs modification for return address value */
+    /*  Special Handling: aarch64 needs modification for return address value  */
 }
 
 test_Unwind_Ptr
@@ -423,7 +423,7 @@ uw_copy_context(struct test_Unwind_Context *target, struct test_Unwind_Context *
     memcpy(target, source, sizeof(struct test_Unwind_Context));
 }
 
-/* Frame State management */
+/*  Frame State management  */
 const unsigned char *
 test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
     test_Unwind_FrameState *fs)
@@ -435,7 +435,7 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
     _uleb128_t utmp;
     _sleb128_t stmp;
 
-    /* g++ v2 "eh" has pointer immediately following augmentation string,
+    /*  g++ v2 "eh" has pointer immediately following augmentation string,
         so it must be handled first.  */
     if (aug[0] == 'e' && aug[1] == 'h')
     {
@@ -445,7 +445,7 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
         aug += 2;
     }
 
-  /* After the augmentation resp. pointer for "eh" augmentation
+  /*  After the augmentation resp. pointer for "eh" augmentation
      follows for CIE version >= 4 address size byte and
      segment size byte.  */
   if (cie->version >= 4)
@@ -454,7 +454,7 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
 	    return NULL;
       p += 2;
     }
-    /* Immediately following this are the code and
+    /*  Immediately following this are the code and
         data alignment and return address column.  */
     p = read_uleb128 (p, &utmp);
     fs->code_align = (test_Unwind_Word)utmp;
@@ -469,7 +469,7 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
         }
     fs->lsda_encoding = DW_EH_PE_omit;
 
-    /* If the augmentation starts with 'z', then a uleb128 immediately
+    /*  If the augmentation starts with 'z', then a uleb128 immediately
         follows containing the length of the augmentation field following
         the size.  */
     if (*aug == 'z')
@@ -481,24 +481,24 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
         ++aug;
         }
 
-    /* Iterate over recognized augmentation subsequences.  */
+    /*  Iterate over recognized augmentation subsequences.  */
     while (*aug != '\0')
         {
-        /* "L" indicates a byte showing how the LSDA pointer is encoded.  */
+        /*  "L" indicates a byte showing how the LSDA pointer is encoded.  */
         if (aug[0] == 'L')
         {
         fs->lsda_encoding = *p++;
         aug += 1;
         }
 
-        /* "R" indicates a byte indicating how FDE addresses are encoded.  */
+        /*  "R" indicates a byte indicating how FDE addresses are encoded.  */
         else if (aug[0] == 'R')
         {
         fs->fde_encoding = *p++;
         aug += 1;
         }
 
-        /* "P" indicates a personality routine in the CIE augmentation.  */
+        /*  "P" indicates a personality routine in the CIE augmentation.  */
         else if (aug[0] == 'P')
         {
         test_Unwind_Ptr personality;
@@ -508,19 +508,19 @@ test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Cont
         aug += 1;
         }
 
-        /* "S" indicates a signal frame.  */
+        /*  "S" indicates a signal frame.  */
         else if (aug[0] == 'S')
         {
         fs->signal_frame = 1;
         aug += 1;
         }
-        /* aarch64 B-key pointer authentication.  */
+        /*  aarch64 B-key pointer authentication.  */
         else if (aug[0] == 'B')
         {
         aug += 1;
         }
 
-        /* Otherwise we have an unknown augmentation string.
+        /*  Otherwise we have an unknown augmentation string.
         Bail unless we saw a 'z' prefix.  */
         else
         return ret;
@@ -553,14 +553,14 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
     cie = test_get_cie (fde);
     insn = test_extract_cie_info (cie, context, fs);
     if (insn == NULL)
-        /* CIE contained unknown augmentation.  */
+        /*  CIE contained unknown augmentation.  */
         return _URC_FATAL_PHASE1_ERROR;
 
-    /* First decode all the insns in the CIE.  */
+    /*  First decode all the insns in the CIE.  */
     end = (const unsigned char *) test_next_fde ((const struct test_dwarf_fde *) cie);
     //test_execute_cfa_program (insn, end, context, fs);
 
-    /* Locate augmentation for the fde.  */
+    /*  Locate augmentation for the fde.  */
     aug = (const unsigned char *) fde + sizeof (*fde);
     aug += 2 * size_of_encoded_value (fs->fde_encoding);
     insn = NULL;
@@ -581,7 +581,7 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
         printf("generated lsda: %p\n", lsda);
     }
 
-    /* Then the insns in the FDE up to our target PC.  */
+    /*  Then the insns in the FDE up to our target PC.  */
     if (insn == NULL)
         insn = aug;
     end = (const unsigned char *) test_next_fde (fde);
@@ -603,7 +603,7 @@ test_uw_install_context_1 (struct test_Unwind_Context *current, struct test_Unwi
     long i; 
     test_Unwind_SpTmp sp_slot; 
 
-    /* If the target frame does not have a saved stack pointer,
+    /*  If the target frame does not have a saved stack pointer,
      then set up the target's CFA.  */
     if (!test_Unwind_GetGRPtr (target, _builtin_dwarf_sp_column()))
         test_Unwind_SetSpColumn (target, target->cfa, &sp_slot); //TODO: recheck this, it is using an empty pointer to fill an empty cfa column
@@ -635,7 +635,7 @@ test_uw_install_context_1 (struct test_Unwind_Context *current, struct test_Unwi
             memcpy (c, t, dwarf_reg_size_table[i]);
         }
 
-    /* If the current frame doesn't have a saved stack pointer, then we
+    /*  If the current frame doesn't have a saved stack pointer, then we
         need to rely on EH_RETURN_STACKADJ_RTX to get our target stack
         pointer value reloaded.  */
     if (!test_Unwind_GetGRPtr (current, _builtin_dwarf_sp_column()))
@@ -644,7 +644,7 @@ test_uw_install_context_1 (struct test_Unwind_Context *current, struct test_Unwi
 
             target_cfa = test_Unwind_GetPtr (target, _builtin_dwarf_sp_column());
 
-            /* We adjust SP by the difference between CURRENT and TARGET's CFA.  */
+            /*  We adjust SP by the difference between CURRENT and TARGET's CFA.  */
             if (__STACK_GROWS_DOWNWARD__)
             return target_cfa - current->cfa + target->args_size;
             else

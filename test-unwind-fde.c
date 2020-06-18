@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-/* Routines */
+/*  Routines  */
 void
 init_eh_frame_hdr(const unsigned char *eh_frame_hdr, const unsigned char *text)
 {
@@ -88,20 +88,20 @@ test_get_cie_encoding(const struct test_dwarf_cie *cie)
     if (cie->version >= 4) {
         if (p[0] != sizeof(void *) || p[1] != 0) // TODO: check this case more throughly
             return DW_EH_PE_omit;
-        p += 2;                         /* Skip address size and segment size */
+        p += 2;                         /*  Skip address size and segment size  */
     }
 
     if (aug[0] != 'z')
         return DW_EH_PE_absptr;
 
-    p = read_uleb128 (p, &utmp);		/* Skip code alignment */
-    p = read_sleb128 (p, &stmp);		/* Skip data alignment */
-    if (cie->version == 1)		        /* Skip return address column */
+    p = read_uleb128 (p, &utmp);		/*  Skip code alignment  */
+    p = read_sleb128 (p, &stmp);		/*  Skip data alignment  */
+    if (cie->version == 1)		        /*  Skip return address column  */
         p++;
     else
         p = read_uleb128 (p, &utmp);
-    aug++;				                /* Skip 'z' */
-    p = read_uleb128 (p, &utmp);		/* Skip augmentation length */
+    aug++;				                /*  Skip 'z'  */
+    p = read_uleb128 (p, &utmp);		/*  Skip augmentation length  */
 
     while (1) {
         if (*aug == 'R')
@@ -171,12 +171,13 @@ find_fde(void *pc, struct test_dwarf_eh_bases *bases) // TODO: make the search b
             fde->pc_begin, &func);
         bases->func = (void *)func;
     }
+    return fde;
 }
 
 const test_fde *
 test_next_fde (const test_fde *f)
 {
-  return (const test_fde *) ((const char *) f + f->length + sizeof (f->length));
+    return (const test_fde *) ((const char *) f + f->length + sizeof (f->length));
 }
 
 #ifdef __cplusplus

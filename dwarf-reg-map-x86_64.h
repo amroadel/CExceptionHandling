@@ -44,4 +44,4 @@ _builtin_init_dwarf_reg_size_table(unsigned char *table)
 }
 #endif
 
-#endif /* DWARF_REG_MAP */
+#endif /*  DWARF_REG_MAP  */

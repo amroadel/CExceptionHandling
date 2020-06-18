@@ -10,11 +10,11 @@ extern "C" {
 typedef void * test_Unwind_Context_Reg_Val;
 typedef unsigned test_Unwind_Internal_Ptr __attribute__((__mode__(__pointer__)));
 
-/* Data types*/
+/*  Data types  */
 struct test_Unwind_FrameState_t;
 typedef struct test_Unwind_FrameState_t test_Unwind_FrameState;
 
-/* Routines */
+/*  Routines  */
 #define test_uw_init_context(CONTEXT)                                           \
 do {                                                                            \
     __builtin_unwind_init();                                                    \
@@ -43,4 +43,4 @@ uw_get_personality(test_Unwind_FrameState *fs);
 }
 #endif
 
-#endif /* TEST_UNWIND_EH */
+#endif /*  TEST_UNWIND_EH  */
