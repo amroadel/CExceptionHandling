@@ -26,13 +26,13 @@ extern "C" {
 #define _r15 15
 #define _ra  16
 
-inline int
+static inline int
 _builtin_dwarf_sp_column()
 {
     return (int)_rsp;
 }
 
-inline void
+static inline void
 _builtin_init_dwarf_reg_size_table(unsigned char *table)
 {
     unsigned char *p = table;

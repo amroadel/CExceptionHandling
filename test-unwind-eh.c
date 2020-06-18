@@ -89,13 +89,13 @@ unsigned char dwarf_reg_size_table[_DWARF_FRAME_REGISTERS];
 
 /* Routines */
 /* Unwind support functions */
-inline test_Unwind_Word
+static inline test_Unwind_Word
 test_Unwind_Get_Unwind_Word(test_Unwind_Context_Reg_Val val)
 {
     return (test_Unwind_Word)(test_Unwind_Internal_Ptr)val;
 }
 
-inline test_Unwind_Context_Reg_Val
+static inline test_Unwind_Context_Reg_Val
 test_Unwind_Get_Unwind_Context_Reg_Val(test_Unwind_Word val)
 {
     return (test_Unwind_Context_Reg_Val)(test_Unwind_Internal_Ptr)val;
@@ -105,13 +105,13 @@ test_Unwind_Get_Unwind_Context_Reg_Val(test_Unwind_Word val)
 #define ASSUME_EXTENDED_UNWIND_CONTEXT 0
 #endif
 
-inline test_Unwind_Word
+static inline test_Unwind_Word
 test_Unwind_IsSignalFrame(struct test_Unwind_Context *context)
 {
     return (context->flags & SIGNAL_FRAME_BIT) ? 1 : 0;
 }
 
-inline void
+static inline void
 test_Unwind_SetSignalFrame(struct test_Unwind_Context *context, int val)
 {
     if (val)
@@ -120,14 +120,14 @@ test_Unwind_SetSignalFrame(struct test_Unwind_Context *context, int val)
         context->flags &= ~SIGNAL_FRAME_BIT;
 }
 
-inline test_Unwind_Word
+static inline test_Unwind_Word
 test_Unwind_IsExtendedContext(struct test_Unwind_Context *context)
 {
     return (ASSUME_EXTENDED_UNWIND_CONTEXT
         || (context->flags & EXTENDED_CONTEXT_BIT));
 }
 
-inline void
+static inline void
 test_Unwind_SetSpColumn(struct test_Unwind_Context *context, void *cfa,
 	test_Unwind_SpTmp *tmp_sp)
 {
@@ -230,13 +230,13 @@ test_Unwind_GetDataRelBase(struct test_Unwind_Context *context)
 }
 
 /* Gerneral Register management */
-inline void *
+static inline void *
 test_Unwind_GetPtr(struct test_Unwind_Context *context, int index)
 {
     return (void *)(test_Unwind_Internal_Ptr)test_Unwind_GetGR(context, index);
 }
 
-inline void *
+static inline void *
 test_Unwind_GetGRPtr(struct test_Unwind_Context *context, int index)
 {
     index = _DWARF_REG_TO_UNWIND_COLUMN(index);
@@ -245,7 +245,7 @@ test_Unwind_GetGRPtr(struct test_Unwind_Context *context, int index)
     return (void *)(test_Unwind_Internal_Ptr)context->reg[index];
 }
 
-inline void
+static inline void
 test_Unwind_SetGRPtr(struct test_Unwind_Context *context, int index, void *p)
 {
     index = _DWARF_REG_TO_UNWIND_COLUMN(index);
@@ -254,7 +254,7 @@ test_Unwind_SetGRPtr(struct test_Unwind_Context *context, int index, void *p)
     context->reg[index] = (test_Unwind_Context_Reg_Val)(test_Unwind_Internal_Ptr)p;
 }
 
-inline void
+static inline void
 test_Unwind_SetGRValue(struct test_Unwind_Context *context, int index, test_Unwind_Word val)
 {
     index = _DWARF_REG_TO_UNWIND_COLUMN(index);
@@ -262,7 +262,7 @@ test_Unwind_SetGRValue(struct test_Unwind_Context *context, int index, test_Unwi
     context->reg[index] = test_Unwind_Get_Unwind_Context_Reg_Val(val);
 }
 
-inline char
+static inline char
 test_Unwind_GRByValue(struct test_Unwind_Context *context, int index)
 {
     index = _DWARF_REG_TO_UNWIND_COLUMN(index);
@@ -406,7 +406,7 @@ test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameSta
     /* Special Handling: aarch64 needs modification for return address value */
 }
 
-inline test_Unwind_Ptr
+test_Unwind_Ptr
 test_uw_identify_context(struct test_Unwind_Context *context)
 {
     // TODO: This needs more resreach
@@ -416,7 +416,7 @@ test_uw_identify_context(struct test_Unwind_Context *context)
         return test_Unwind_GetCFA(context) + test_Unwind_IsSignalFrame (context);
 }
 
-inline void
+void
 uw_copy_context(struct test_Unwind_Context *target, struct test_Unwind_Context *source)
 {
     target = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
@@ -591,7 +591,7 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
 
 }
 
-inline test_Unwind_Personality_Fn
+test_Unwind_Personality_Fn
 uw_get_personality(test_Unwind_FrameState *fs)
 {
     return fs->personality;

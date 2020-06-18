@@ -27,16 +27,16 @@ _init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_
 void
 test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs);
 
-inline test_Unwind_Ptr
+test_Unwind_Ptr
 test_uw_identify_context(struct test_Unwind_Context *context);
 
-inline void
+void
 uw_copy_context(struct test_Unwind_Context *target, struct test_Unwind_Context *source);
 
 test_Unwind_Reason_Code
 test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState *fs);
 
-inline test_Unwind_Personality_Fn
+test_Unwind_Personality_Fn
 uw_get_personality(test_Unwind_FrameState *fs);
 
 #ifdef __cplusplus

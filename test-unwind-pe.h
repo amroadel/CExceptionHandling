@@ -52,7 +52,7 @@ read_encoded_value_with_base(unsigned char encoding, test_Unwind_Ptr base,
 test_Unwind_Ptr
 base_of_encoded_value(unsigned char encoding, struct test_Unwind_Context *context);
 
-inline const unsigned char *
+const unsigned char *
 read_encoded_value(struct test_Unwind_Context *context, unsigned char encoding,
 	const unsigned char *p, test_Unwind_Ptr *val);
 

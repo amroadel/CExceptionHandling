@@ -66,7 +66,7 @@ base_from_header(unsigned char encoding)
     }
 }
 
-inline const struct test_dwarf_cie *
+const struct test_dwarf_cie *
 test_get_cie(const struct test_dwarf_fde *f)
 {
     return (const void *)&f->CIE_delta - f->CIE_delta;
@@ -118,7 +118,7 @@ test_get_cie_encoding(const struct test_dwarf_cie *cie)
     }
 }
 
-inline unsigned char
+unsigned char
 test_get_fde_encoding(const struct test_dwarf_fde *fde)
 {
     return test_get_cie_encoding(test_get_cie(fde));
@@ -173,7 +173,7 @@ find_fde(void *pc, struct test_dwarf_eh_bases *bases) // TODO: make the search b
     }
 }
 
-inline const test_fde *
+const test_fde *
 test_next_fde (const test_fde *f)
 {
   return (const test_fde *) ((const char *) f + f->length + sizeof (f->length));
