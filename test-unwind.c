@@ -6,6 +6,8 @@
 extern "C" {
 #endif
 
+#define test_Unwind_Frames_Increment(context, frames) frames++
+
 /*  Data types  */
 typedef void (*test_Unwind_Exception_Cleanup_Fn)
     (test_Unwind_Reason_Code,
@@ -22,7 +24,41 @@ struct test_Unwind_Exception {
 test_Unwind_Reason_Code
 test_Unwind_RaiseException_Phase2(struct test_Unwind_Exception *exc,
     struct test_Unwind_Context *context,
-    unsigned long *frames_p);
+    unsigned long *frames_out)
+{
+    test_Unwind_Reason_Code code;
+    unsigned long frames = 1;
+
+    while (1) {
+        /*  Step 2: set up the frame state to describe the caller of context.  */
+        test_Unwind_FrameState *fs;
+        int match_handler;
+        code = test_uw_frame_state_for(context, fs);
+        /*  Identify when we've reached the handler context placed in Phase 1.  */
+        match_handler = (test_uw_identify_context(context) == exc->private_2
+            ? _UA_HANDLER_FRAME : 0);
+        /*  Some error encountered.  */
+        if (code != _URC_NO_REASON)
+            return _URC_FATAL_PHASE2_ERROR;
+
+        /*  Step 3: run the personality routine.  */
+        if (uw_get_personality(fs)) {
+            code = uw_get_personality(fs)(1, _UA_CLEANUP_PHASE | match_handler,
+                exc->exception_class, exc, context);
+            if (code == _URC_INSTALL_CONTEXT)
+                break;
+            if (code != _URC_CONTINUE_UNWIND) 
+                return _URC_FATAL_PHASE2_ERROR;
+        }
+
+        /*  Step 4: update the context using frame state fs  */
+        test_uw_update_context(context, fs);
+        test_Unwind_Frames_Increment(context, frames);
+    }
+
+    *frames_out = frames;
+    return code;
+}
 
 test_Unwind_Reason_Code
 test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
@@ -61,7 +97,7 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
         }
 
         /*  Step 4: update the cur_context using frame state fs  */
-        test_uw_update_context (cur_context, fs);
+        test_uw_update_context(cur_context, fs);
         free(fs);
     }
 
