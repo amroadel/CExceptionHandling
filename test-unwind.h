@@ -51,7 +51,7 @@ typedef test_Unwind_Reason_Code (*test_Unwind_Stop_Fn)
     struct test_Unwind_Exception *, struct test_Unwind_Context *, void *);
 
 test_Unwind_Reason_Code
-test_Unwind_ForcedUnwind(struct test_Unwind_Exception *, test_Unwind_Stop_Fn stop, void *stop_argument);
+test_Unwind_ForcedUnwind(struct test_Unwind_Exception *exc, test_Unwind_Stop_Fn stop, void *stop_argument);
 
 void
 test_Unwind_Resume(struct test_Unwind_Exception *exc);

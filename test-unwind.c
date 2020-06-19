@@ -123,10 +123,32 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
 }
 
 test_Unwind_Reason_Code
-test_Unwind_ForcedUnwind(struct test_Unwind_Exception *exc, test_Unwind_Stop_Fn, void *stop);
+test_Unwind_ForcedUnwind_Phase2(struct test_Unwind_Exception *exc,
+    struct test_Unwind_Context *context,
+    unsigned long *frames_out);
+
+test_Unwind_Reason_Code
+test_Unwind_ForcedUnwind(struct test_Unwind_Exception *exc, test_Unwind_Stop_Fn stop, void *stop_argument);
 
 void
-test_Unwind_Resume(struct test_Unwind_Exception *exc);
+test_Unwind_Resume(struct test_Unwind_Exception *exc)
+{
+    struct test_Unwind_Context *this_context, *cur_context;
+    test_Unwind_Reason_Code code;
+    unsigned long frames;
+
+    test_uw_init_context(this_context);
+    uw_copy_context(cur_context, this_context);
+
+    /*  private_1 for RaiseException is 0.
+        private_1 for ForcedUnwind is the stop function pointer.  */
+    if (exc->private_1 == 0)
+        code = _Unwind_RaiseException_Phase2(exc, cur_context, &frames);
+    else
+        code = _Unwind_ForcedUnwind_Phase2(exc, cur_context, &frames);
+
+    test_uw_install_context(this_context, cur_context, frames);
+}
 
 void
 test_Unwind_DeleteException(struct test_Unwind_Exception *exc);
