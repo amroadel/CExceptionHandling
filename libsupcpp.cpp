@@ -121,7 +121,7 @@ int readSLEB128(const uint8_t* data)
  * The LSDA is a read only place in memory; we'll create a typedef for
  * this to avoid a const mess later on; LSDA_ptr refers to readonly and
  * &LSDA_ptr will be a non-const pointer to a const place in memory
- */
+  */
 typedef const uint8_t* LSDA_ptr;
 typedef uint64_t LSDA_line;
 
@@ -253,7 +253,7 @@ struct Call_Site {
 
 /**
  * A class to read the language specific data for a function
- */
+  */
 struct LSDA
 {
     LSDA_Header header;
@@ -480,7 +480,7 @@ _Unwind_Reason_Code __gxx_personality_v0 (
     struct test_Unwind_Context *context2;
     struct test_dwarf_eh_bases *bases;
     const unsigned char* fde = (const unsigned char*)find_fde((void *)(throw_ip + 1), bases);
-    add_lsda(fde, context2);
+    //add_lsda(fde, context2);
     
     test_Unwind_FrameState *fs;
     test_Unwind_Reason_Code code;

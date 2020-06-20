@@ -100,7 +100,7 @@ char* get_sectionHeader_string_table(Elf64_Ehdr *hdr)
 
 
 
-/* Display the section header */
+/*  Display the section header  */
 static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr )
 {
     Elf64_Addr  eh_frame_v_address;
@@ -131,7 +131,7 @@ unsigned char *read_elf(int argc, char **argv)
     if (hdl == NULL)
         return NULL;
 
-    /* retreive pointers for each elf file sections */
+    /*  retreive pointers for each elf file sections  */
     Elf64_Shdr *shdr = re_get_section_header(hdl);
     Elf64_Ehdr *ehdr = hdl->ehdr64;
 

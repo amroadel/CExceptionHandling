@@ -11,7 +11,7 @@ typedef unsigned int test_uword;
 typedef int test_sword;
 typedef unsigned char test_ubyte;
 
-/* Data types*/
+/*  Data types  */
 struct test_dwarf_eh_bases {
     void *tbase;
     void *dbase;
@@ -44,27 +44,27 @@ struct test_dwarf_fde {
 }__attribute__((packed, aligned (__alignof__ (void *))));
 typedef struct test_dwarf_fde test_fde;
 
-/* Routines */
+/*  Routines  */
 void
 init_eh_frame_hdr(const unsigned char *eh_frame, const unsigned char *text);
 
-inline const struct test_dwarf_cie *
+const struct test_dwarf_cie *
 test_get_cie(const struct test_dwarf_fde *fde);
 
 unsigned char
 test_get_cie_encoding (const struct test_dwarf_cie *cie);
 
-inline unsigned char
+unsigned char
 test_get_fde_encoding (const struct test_dwarf_fde *fde);
 
 const test_fde *
 find_fde(void *pc, struct test_dwarf_eh_bases *bases);
 
-inline const test_fde *
+const test_fde *
 test_next_fde (const test_fde *f);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* TEST_UNWIND_FDE */
+#endif /*  TEST_UNWIND_FDE  */

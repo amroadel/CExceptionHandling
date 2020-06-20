@@ -1,6 +1,6 @@
 #include "test-unwind-pe.h"
 #include "stdlib.h"
-#include "stdio.h"
+#include "stdio.h" //TODO: Remember to remove this
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,7 +191,7 @@ base_of_encoded_value (unsigned char encoding, struct test_Unwind_Context *conte
   abort();
 }
 
-inline const unsigned char *
+const unsigned char *
 read_encoded_value (struct test_Unwind_Context *context, unsigned char encoding,
 	const unsigned char *p, test_Unwind_Ptr *val)
 {

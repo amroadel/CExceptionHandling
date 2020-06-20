@@ -13,11 +13,11 @@ typedef unsigned _sleb128_t __attribute__((__mode__(__pointer__)));
 typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 #endif
 
-/* Pointer encodings */
-/* Special */
+/*  Pointer encodings  */
+/*  Special  */
 #define DW_EH_PE_absptr         0x00
 #define DW_EH_PE_omit           0xff
-/* Data encoding */
+/*  Data encoding  */
 #define DW_EH_PE_uleb128        0x01
 #define DW_EH_PE_udata2         0x02
 #define DW_EH_PE_udata4         0x03
@@ -27,7 +27,7 @@ typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 #define DW_EH_PE_sdata2         0x0A
 #define DW_EH_PE_sdata4         0x0B
 #define DW_EH_PE_sdata8         0x0C
-/* Base encoding */
+/*  Base encoding  */
 #define DW_EH_PE_pcrel          0x10
 #define DW_EH_PE_textrel        0x20
 #define DW_EH_PE_datarel        0x30
@@ -35,7 +35,7 @@ typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 #define DW_EH_PE_aligned        0x50
 #define DW_EH_PE_indirect	    0x80
 
-/* Routines*/
+/*  Routines  */
 unsigned int
 size_of_encoded_value(unsigned char encoding);
 
@@ -52,7 +52,7 @@ read_encoded_value_with_base(unsigned char encoding, test_Unwind_Ptr base,
 test_Unwind_Ptr
 base_of_encoded_value(unsigned char encoding, struct test_Unwind_Context *context);
 
-inline const unsigned char *
+const unsigned char *
 read_encoded_value(struct test_Unwind_Context *context, unsigned char encoding,
 	const unsigned char *p, test_Unwind_Ptr *val);
 
@@ -60,4 +60,4 @@ read_encoded_value(struct test_Unwind_Context *context, unsigned char encoding,
 }
 #endif
 
-#endif /* TEST_UNWIND_PE */
+#endif /*  TEST_UNWIND_PE  */
