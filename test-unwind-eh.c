@@ -552,6 +552,22 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
 
 }
 
+/* Install TARGET into CURRENT so that we can return to it.  This is a
+   macro because __builtin_eh_return must be invoked in the context of
+   our caller.  FRAMES is a number of frames to be unwind.
+   _Unwind_Frames_Extra is a macro to do additional work during unwinding
+   if needed, for example shadow stack pointer adjustment for Intel CET
+   technology.  */
+
+#define test_uw_install_context(CURRENT, TARGET, FRAMES)			\
+  do									\
+    {									\
+      long offset = test_uw_install_context_1 ((CURRENT), (TARGET));		\
+      void *handler = test_uw_frob_return_addr ((CURRENT), (TARGET));	\
+      test_Unwind_DebugHook ((TARGET)->cfa, handler);			\
+      __builtin_eh_return (offset, handler);				\
+    }									\
+  while (0)
 
 inline void
 test_Unwind_SetSpColumn (struct test_Unwind_Context *context, void *cfa,
@@ -637,6 +653,24 @@ test_uw_frob_return_addr (struct test_Unwind_Context *current
   void *ret_addr = __builtin_frob_return_addr (target->ra); //TODO: Check if this is avilable to use directly: https://gcc.gnu.org/onlinedocs/gcc/Return-Address.html
   return ret_addr;
 } 
+
+/* This function is called during unwinding.  It is intended as a hook
+   for a debugger to intercept exceptions.  CFA is the CFA of the
+   target frame.  HANDLER is the PC to which control will be
+   transferred.  http://agentzh.org/misc/code/systemtap/includes/sys/sdt.h.html*/
+
+void
+test_Unwind_DebugHook (void *cfa __attribute__ ((__unused__)),
+		   void *handler __attribute__ ((__unused__)))
+{
+    /* We only want to use stap probes starting with v3.  Earlier
+    versions added too much startup cost.  */
+    #if defined (HAVE_SYS_SDT_H) && defined (STAP_PROBE2) && _SDT_NOTE_TYPE >= 3
+    STAP_PROBE2 (libgcc, unwind, cfa, handler);
+    #else
+    asm ("");
+    #endif
+}
 
 #ifdef __cplusplus
 }
