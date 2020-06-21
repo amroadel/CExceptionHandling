@@ -56,7 +56,6 @@ base_from_header(unsigned char encoding)
     case DW_EH_PE_pcrel:
     case DW_EH_PE_aligned:
         return 0;
-
     case DW_EH_PE_textrel:
         return (test_Unwind_Ptr)header.eh_bases.tbase;
     case DW_EH_PE_datarel:
@@ -94,14 +93,14 @@ test_get_cie_encoding(const struct test_dwarf_cie *cie)
     if (aug[0] != 'z')
         return DW_EH_PE_absptr;
 
-    p = read_uleb128 (p, &utmp);		/*  Skip code alignment  */
-    p = read_sleb128 (p, &stmp);		/*  Skip data alignment  */
+    p = read_uleb128(p, &utmp);		/*  Skip code alignment  */
+    p = read_sleb128(p, &stmp);		/*  Skip data alignment  */
     if (cie->version == 1)		        /*  Skip return address column  */
         p++;
     else
-        p = read_uleb128 (p, &utmp);
+        p = read_uleb128(p, &utmp);
     aug++;				                /*  Skip 'z'  */
-    p = read_uleb128 (p, &utmp);		/*  Skip augmentation length  */
+    p = read_uleb128(p, &utmp);		/*  Skip augmentation length  */
 
     while (1) {
         if (*aug == 'R')
@@ -175,9 +174,9 @@ find_fde(void *pc, struct test_dwarf_eh_bases *bases) // TODO: make the search b
 }
 
 const test_fde *
-test_next_fde (const test_fde *f)
+test_next_fde(const test_fde *f)
 {
-    return (const test_fde *) ((const char *) f + f->length + sizeof (f->length));
+    return (const test_fde *)((const char *)f + f->length + sizeof(f->length));
 }
 
 #ifdef __cplusplus

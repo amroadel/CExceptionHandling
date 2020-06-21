@@ -11,6 +11,14 @@ typedef unsigned test_Unwind_Word __attribute__((__mode__(__DI__)));
 typedef signed test_Unwind_Sword __attribute__((__mode__(__DI__)));
 typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 
+typedef test_Unwind_Reason_Code (*test_Unwind_Stop_Fn)
+    (int, test_Unwind_Action, test_Unwind_Exception_Class,
+    struct test_Unwind_Exception *, struct test_Unwind_Context *, void *);
+
+typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
+    (int, test_Unwind_Action, test_Unwind_Exception_Class,
+    struct test_Unwind_Exception *, struct test_Unwind_Context *);
+
 /*  Data types  */
 /*  Reason codes are used to indicate failures or action results  */
 typedef enum {
@@ -45,10 +53,6 @@ struct test_Unwind_Context;
 /*  Routines  */
 test_Unwind_Reason_Code
 test_Unwind_RaiseException(struct test_Unwind_Exception *exc);
-
-typedef test_Unwind_Reason_Code (*test_Unwind_Stop_Fn)
-    (int, test_Unwind_Action, test_Unwind_Exception_Class,
-    struct test_Unwind_Exception *, struct test_Unwind_Context *, void *);
 
 test_Unwind_Reason_Code
 test_Unwind_ForcedUnwind(struct test_Unwind_Exception *exc, test_Unwind_Stop_Fn stop, void *stop_argument);
@@ -85,10 +89,6 @@ test_Unwind_GetTextRelBase(struct test_Unwind_Context *context);
 
 test_Unwind_Ptr
 test_Unwind_GetDataRelBase(struct test_Unwind_Context *context);
-
-typedef test_Unwind_Reason_Code (*test_Unwind_Personality_Fn)
-    (int, test_Unwind_Action, test_Unwind_Exception_Class,
-    struct test_Unwind_Exception *, struct test_Unwind_Context *);
 
 #ifdef __cplusplus
 }

@@ -139,6 +139,24 @@ test_Unwind_SetSpColumn(struct test_Unwind_Context *context, void *cfa,
     test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column(), tmp_sp);
 }
 
+/*  This function is called during unwinding. It is intended as a hook
+   for a debugger to intercept exceptions. CFA is the CFA of the
+   target frame. HANDLER is the PC to which control will be
+   transferred. http://agentzh.org/misc/code/systemtap/includes/sys/sdt.h.html  */
+
+void
+test_Unwind_DebugHook (void *cfa __attribute__ ((__unused__)),
+    void *handler __attribute__ ((__unused__)))
+{
+    /*  We only want to use stap probes starting with v3. Earlier
+        versions added too much startup cost.  */
+    #if defined (HAVE_SYS_SDT_H) && defined (STAP_PROBE2) && _SDT_NOTE_TYPE >= 3
+    STAP_PROBE2 (libgcc, unwind, cfa, handler);
+    #else
+    asm ("");
+    #endif
+}
+
 /*  Unwind setters and getters  */
 test_Unwind_Word
 test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
@@ -190,7 +208,7 @@ test_Unwind_SetGR(struct test_Unwind_Context *context, int index, test_Unwind_Wo
 test_Unwind_Ptr
 test_Unwind_GetIP(struct test_Unwind_Context *context)
 {
-    return (test_Unwind_Ptr) context->ra;
+    return (test_Unwind_Ptr)context->ra;
 }
 
 void
@@ -202,31 +220,31 @@ test_Unwind_SetIP(struct test_Unwind_Context *context, test_Unwind_Ptr val)
 test_Unwind_Word
 test_Unwind_GetCFA(struct test_Unwind_Context *context)
 {
-    return (test_Unwind_Word) context->cfa;
+    return (test_Unwind_Word)context->cfa;
 }
 
 test_Unwind_Ptr
 test_Unwind_GetLanguageSpecificData(struct test_Unwind_Context *context)
 {
-    return (test_Unwind_Ptr) context->lsda;
+    return (test_Unwind_Ptr)context->lsda;
 }
 
 test_Unwind_Ptr
 test_Unwind_GetRegionStart(struct test_Unwind_Context *context)
 {
-    return (test_Unwind_Ptr) context->bases.func;
+    return (test_Unwind_Ptr)context->bases.func;
 }
 
 test_Unwind_Ptr
 test_Unwind_GetTextRelBase(struct test_Unwind_Context *context)
 {
-    return (test_Unwind_Ptr) context->bases.tbase;
+    return (test_Unwind_Ptr)context->bases.tbase;
 }
 
 test_Unwind_Ptr
 test_Unwind_GetDataRelBase(struct test_Unwind_Context *context)
 {
-    return (test_Unwind_Ptr) context->bases.dbase;
+    return (test_Unwind_Ptr)context->bases.dbase;
 }
 
 /*  Gerneral Register management  */
@@ -290,7 +308,6 @@ _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
 {
     struct test_Unwind_Context orig_context = *context;
     void *cfa;
-    long i;
 
     /*  Special Handling: check gcc equivelant  */
 
@@ -313,7 +330,7 @@ _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
     context->cfa = cfa;
 
     /*  Compute all registers  */
-    for (i = 0; i < _DWARF_FRAME_REGISTERS + 1; ++i)
+    for (int i = 0; i < _DWARF_FRAME_REGISTERS + 1; ++i)
         switch (fs->regs.reg[i].how) {
         case REG_UNSAVED:
         case REG_UNDEFINED:
@@ -411,9 +428,9 @@ test_uw_identify_context(struct test_Unwind_Context *context)
 {
     // TODO: This needs more resreach
     if (__STACK_GROWS_DOWNWARD__)
-        return test_Unwind_GetCFA(context) - test_Unwind_IsSignalFrame (context);
+        return test_Unwind_GetCFA(context) - test_Unwind_IsSignalFrame(context);
     else
-        return test_Unwind_GetCFA(context) + test_Unwind_IsSignalFrame (context);
+        return test_Unwind_GetCFA(context) + test_Unwind_IsSignalFrame(context);
 }
 
 void
@@ -423,121 +440,164 @@ uw_copy_context(struct test_Unwind_Context *target, struct test_Unwind_Context *
     memcpy(target, source, sizeof(struct test_Unwind_Context));
 }
 
+long
+_install_context(struct test_Unwind_Context *current, struct test_Unwind_Context *target)
+{
+    test_Unwind_SpTmp sp_slot; 
+
+    /*  If the target frame does not have a saved stack pointer,
+        then set up the target's CFA.  */
+    if (!test_Unwind_GetGRPtr (target, _builtin_dwarf_sp_column()))
+        test_Unwind_SetSpColumn (target, target->cfa, &sp_slot);
+
+    for (int i = 0; i < _DWARF_FRAME_REGISTERS; ++i) {
+        void *c = (void *) (test_Unwind_Internal_Ptr) current->reg[i];
+        void *t = (void *) (test_Unwind_Internal_Ptr)target->reg[i];
+
+        //gcc_assert (current->by_value[i] == 0);
+            
+        if (target->by_value[i] && c) {
+            test_Unwind_Word w;
+            test_Unwind_Ptr p;
+            if (dwarf_reg_size_table[i] == sizeof (test_Unwind_Word)) {
+                w = (test_Unwind_Internal_Ptr) t;
+                memcpy (c, &w, sizeof (test_Unwind_Word));
+            }
+            else {
+                //gcc_assert (dwarf_reg_size_table[i] == sizeof (test_Unwind_Ptr));
+                p = (test_Unwind_Internal_Ptr) t;
+                memcpy (c, &p, sizeof (test_Unwind_Ptr));
+            }
+        } else if (t && c && t != c) {
+            memcpy (c, t, dwarf_reg_size_table[i]);
+        }
+    }
+
+    /*  If the current frame doesn't have a saved stack pointer, then we
+        need to rely on EH_RETURN_STACKADJ_RTX to get our target stack
+        pointer value reloaded.  */
+    if (!test_Unwind_GetGRPtr (current, _builtin_dwarf_sp_column())) {
+        void *target_cfa;
+        target_cfa = test_Unwind_GetPtr (target, _builtin_dwarf_sp_column());
+
+        /*  We adjust SP by the difference between CURRENT and TARGET's CFA.  */
+        if (__STACK_GROWS_DOWNWARD__)
+            return target_cfa - current->cfa + target->args_size;
+        else
+            return current->cfa - target_cfa - target->args_size;
+    }
+    return 0;
+}
+
+void *
+test_uw_frob_return_addr(struct test_Unwind_Context *current __attribute__ ((__unused__)),
+    struct test_Unwind_Context *target)
+{
+    void *ret_addr = __builtin_frob_return_addr (target->ra); //TODO: Check if this is avilable to use directly: https://gcc.gnu.org/onlinedocs/gcc/Return-Address.html
+    return ret_addr;
+} 
+
+void
+uw_free_context(struct test_Unwind_Context * context)
+{
+    free(context);
+}
+
 /*  Frame State management  */
 const unsigned char *
-test_extract_cie_info (const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
+test_extract_cie_info(const struct test_dwarf_cie *cie, struct test_Unwind_Context *context,
     test_Unwind_FrameState *fs)
 {
-
     const unsigned char *aug = cie->augmentation;
-    const unsigned char *p = aug + strlen ((const char *)aug) + 1;
+    const unsigned char *p = aug + strlen((const char *)aug) + 1;
     const unsigned char *ret = NULL;
     _uleb128_t utmp;
     _sleb128_t stmp;
 
     /*  g++ v2 "eh" has pointer immediately following augmentation string,
         so it must be handled first.  */
-    if (aug[0] == 'e' && aug[1] == 'h')
-    {
-        //fs->eh_ptr = read_pointer (p); //TODO: Check for read_pointer()
-        fs->eh_ptr = (void *)p;
-        p += sizeof (void *);
+    if (aug[0] == 'e' && aug[1] == 'h') {
+        //fs->eh_ptr = read_pointer (p); //TODO: Check for read_pointer() DONE, hopfully
+        fs->eh_ptr = (void *)(*(test_Unwind_Internal_Ptr *)p);
+        p += sizeof(test_Unwind_Internal_Ptr *);
         aug += 2;
     }
 
-  /*  After the augmentation resp. pointer for "eh" augmentation
-     follows for CIE version >= 4 address size byte and
-     segment size byte.  */
-  if (cie->version >= 4)
-    {
-      if (p[0] != sizeof (void *) || p[1] != 0)
-	    return NULL;
-      p += 2;
+    /*  After the augmentation resp. pointer for "eh" augmentation
+        follows for CIE version >= 4 address size byte and
+        segment size byte.  */
+    if (cie->version >= 4) {
+        if (p[0] != sizeof(void *) || p[1] != 0)
+        return NULL;
+        p += 2;
     }
+
     /*  Immediately following this are the code and
         data alignment and return address column.  */
     p = read_uleb128 (p, &utmp);
     fs->code_align = (test_Unwind_Word)utmp;
     p = read_sleb128 (p, &stmp);
     fs->data_align = (test_Unwind_Sword)stmp;
-    if (cie->version == 1)
+    if (cie->version == 1) {
         fs->retaddr_column = *p++;
-    else
-        {
+    } else {
         p = read_uleb128 (p, &utmp);
         fs->retaddr_column = (test_Unwind_Word)utmp;
-        }
+    }
     fs->lsda_encoding = DW_EH_PE_omit;
 
     /*  If the augmentation starts with 'z', then a uleb128 immediately
         follows containing the length of the augmentation field following
         the size.  */
-    if (*aug == 'z')
-        {
+    if (*aug == 'z') {
         p = read_uleb128 (p, &utmp);
         ret = p + utmp;
-
         fs->saw_z = 1;
         ++aug;
-        }
+    }
 
     /*  Iterate over recognized augmentation subsequences.  */
-    while (*aug != '\0')
-        {
-        /*  "L" indicates a byte showing how the LSDA pointer is encoded.  */
-        if (aug[0] == 'L')
-        {
-        fs->lsda_encoding = *p++;
-        aug += 1;
+    while (*aug != '\0') {
+        if (aug[0] == 'L') {
+            /*  "L" indicates a byte showing how the LSDA pointer is encoded.  */
+            fs->lsda_encoding = *p++;
+            aug += 1;
+        } else if (aug[0] == 'R') {
+            /*  "R" indicates a byte indicating how FDE addresses are encoded.  */
+            fs->fde_encoding = *p++;
+            aug += 1;
+        } else if (aug[0] == 'P') {
+            /*  "P" indicates a personality routine in the CIE augmentation.  */
+            test_Unwind_Ptr personality;
+            p = read_encoded_value (context, *p, p + 1, &personality);
+            fs->personality = (test_Unwind_Personality_Fn) personality;
+            aug += 1;
+        } else if (aug[0] == 'S') {
+            /*  "S" indicates a signal frame.  */
+            fs->signal_frame = 1;
+            aug += 1;
+        } else if (aug[0] == 'B') {
+            /*  aarch64 B-key pointer authentication.  */
+            aug += 1;
+        } else {
+            /*  Otherwise we have an unknown augmentation string.
+            Bail unless we saw a 'z' prefix.  */
+            return ret;
         }
-
-        /*  "R" indicates a byte indicating how FDE addresses are encoded.  */
-        else if (aug[0] == 'R')
-        {
-        fs->fde_encoding = *p++;
-        aug += 1;
-        }
-
-        /*  "P" indicates a personality routine in the CIE augmentation.  */
-        else if (aug[0] == 'P')
-        {
-        test_Unwind_Ptr personality;
-
-        p = read_encoded_value (context, *p, p + 1, &personality);
-        fs->personality = (test_Unwind_Personality_Fn) personality;
-        aug += 1;
-        }
-
-        /*  "S" indicates a signal frame.  */
-        else if (aug[0] == 'S')
-        {
-        fs->signal_frame = 1;
-        aug += 1;
-        }
-        /*  aarch64 B-key pointer authentication.  */
-        else if (aug[0] == 'B')
-        {
-        aug += 1;
-        }
-
-        /*  Otherwise we have an unknown augmentation string.
-        Bail unless we saw a 'z' prefix.  */
-        else
-        return ret;
-        }
+    }
 
     return ret ? ret : p;
 }
 
 test_Unwind_Reason_Code
-test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
+test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
 {
     const struct test_dwarf_fde *fde;
     const struct test_dwarf_cie *cie;
     const unsigned char *aug, *insn, *end;
 
     fs = (test_Unwind_FrameState *)malloc(sizeof(test_Unwind_FrameState));
-    memset (fs, 0, sizeof(test_Unwind_FrameState));
+    memset(fs, 0, sizeof(test_Unwind_FrameState));
     context->args_size = 0;
     context->lsda = 0;
 
@@ -545,163 +605,51 @@ test_uw_frame_state_for (struct test_Unwind_Context *context, test_Unwind_FrameS
         return _URC_END_OF_STACK;
     
     fde = find_fde(context->ra, &context->bases);
-
     if (fde == NULL)
         return _URC_END_OF_STACK;
 
     fs->pc = context->bases.func;
-    cie = test_get_cie (fde);
-    insn = test_extract_cie_info (cie, context, fs);
+    cie = test_get_cie(fde);
+    insn = test_extract_cie_info(cie, context, fs);
+    /*  CIE contained unknown augmentation.  */
     if (insn == NULL)
-        /*  CIE contained unknown augmentation.  */
         return _URC_FATAL_PHASE1_ERROR;
 
     /*  First decode all the insns in the CIE.  */
-    end = (const unsigned char *) test_next_fde ((const struct test_dwarf_fde *) cie);
-    //test_execute_cfa_program (insn, end, context, fs);
+    end = (const unsigned char *)test_next_fde((const struct test_dwarf_fde *)cie);
+    test_execute_cfa_program(insn, end, context, fs);
 
     /*  Locate augmentation for the fde.  */
-    aug = (const unsigned char *) fde + sizeof (*fde);
-    aug += 2 * size_of_encoded_value (fs->fde_encoding);
+    aug = (const unsigned char *)fde + sizeof(*fde);
+    aug += 2 * size_of_encoded_value(fs->fde_encoding);
     insn = NULL;
 
-    if (fs->saw_z)
-    {
+    if (fs->saw_z) {
         _uleb128_t i;
-        aug = read_uleb128 (aug, &i);
+        aug = read_uleb128(aug, &i);
         insn = aug + i;
     }
 
-    if (fs->lsda_encoding != DW_EH_PE_omit)
-    {
+    if (fs->lsda_encoding != DW_EH_PE_omit) {
         test_Unwind_Ptr lsda;
-
-        aug = read_encoded_value (context, fs->lsda_encoding, aug, &lsda);
-        context->lsda = (void *) lsda;
+        aug = read_encoded_value(context, fs->lsda_encoding, aug, &lsda);
+        context->lsda = (void *)lsda;
         printf("generated lsda: %p\n", lsda);
     }
 
     /*  Then the insns in the FDE up to our target PC.  */
     if (insn == NULL)
         insn = aug;
-    end = (const unsigned char *) test_next_fde (fde);
-    //test_execute_cfa_program (insn, end, context, fs);
+    end = (const unsigned char *)test_next_fde(fde);
+    test_execute_cfa_program(insn, end, context, fs);
 
     return _URC_NO_REASON;
-
 }
 
-/* Install TARGET into CURRENT so that we can return to it.  This is a
-   macro because __builtin_eh_return must be invoked in the context of
-   our caller.  FRAMES is a number of frames to be unwind.
-   _Unwind_Frames_Extra is a macro to do additional work during unwinding
-   if needed, for example shadow stack pointer adjustment for Intel CET
-   technology.  */
-
-#define test_uw_install_context(CURRENT, TARGET, FRAMES)			\
-  do									\
-    {									\
-      long offset = test_uw_install_context_1 ((CURRENT), (TARGET));		\
-      void *handler = test_uw_frob_return_addr ((CURRENT), (TARGET));	\
-      test_Unwind_DebugHook ((TARGET)->cfa, handler);			\
-      __builtin_eh_return (offset, handler);				\
-    }									\
-  while (0)
-
-inline void
-test_Unwind_SetSpColumn (struct test_Unwind_Context *context, void *cfa,
-		     test_Unwind_SpTmp *tmp_sp)
 test_Unwind_Personality_Fn
 uw_get_personality(test_Unwind_FrameState *fs)
 {
     return fs->personality;
-}
-
-long
-test_uw_install_context_1 (struct test_Unwind_Context *current, struct test_Unwind_Context *target)
-{
-    long i; 
-    test_Unwind_SpTmp sp_slot; 
-
-    /*  If the target frame does not have a saved stack pointer,
-     then set up the target's CFA.  */
-    if (!test_Unwind_GetGRPtr (target, _builtin_dwarf_sp_column()))
-        test_Unwind_SetSpColumn (target, target->cfa, &sp_slot); //TODO: recheck this, it is using an empty pointer to fill an empty cfa column
-
-    for (i = 0; i < _DWARF_FRAME_REGISTERS; ++i)
-        {
-            void *c = (void *) (test_Unwind_Internal_Ptr) current->reg[i];
-            void *t = (void *) (test_Unwind_Internal_Ptr)target->reg[i];
-
-            //gcc_assert (current->by_value[i] == 0);
-                
-            if (target->by_value[i] && c)
-            {
-                test_Unwind_Word w;
-                test_Unwind_Ptr p;
-                if (dwarf_reg_size_table[i] == sizeof (test_Unwind_Word))
-                {
-                    w = (test_Unwind_Internal_Ptr) t;
-                    memcpy (c, &w, sizeof (test_Unwind_Word));
-                }
-                else
-                {
-                    //gcc_assert (dwarf_reg_size_table[i] == sizeof (test_Unwind_Ptr));
-                    p = (test_Unwind_Internal_Ptr) t;
-                    memcpy (c, &p, sizeof (test_Unwind_Ptr));
-                }
-            }
-            else if (t && c && t != c)
-            memcpy (c, t, dwarf_reg_size_table[i]);
-        }
-
-    /*  If the current frame doesn't have a saved stack pointer, then we
-        need to rely on EH_RETURN_STACKADJ_RTX to get our target stack
-        pointer value reloaded.  */
-    if (!test_Unwind_GetGRPtr (current, _builtin_dwarf_sp_column()))
-        {
-            void *target_cfa;
-
-            target_cfa = test_Unwind_GetPtr (target, _builtin_dwarf_sp_column());
-
-            /*  We adjust SP by the difference between CURRENT and TARGET's CFA.  */
-            if (__STACK_GROWS_DOWNWARD__)
-            return target_cfa - current->cfa + target->args_size;
-            else
-            return current->cfa - target_cfa - target->args_size;
-        }
-    return 0;
-    
-}
-
-/* Frob exception handler's address kept in TARGET before installing into
-   CURRENT context.  */
-
-inline void *
-test_uw_frob_return_addr (struct test_Unwind_Context *current
-		     __attribute__ ((__unused__)),
-		     struct test_Unwind_Context *target)
-{
-  void *ret_addr = __builtin_frob_return_addr (target->ra); //TODO: Check if this is avilable to use directly: https://gcc.gnu.org/onlinedocs/gcc/Return-Address.html
-  return ret_addr;
-} 
-
-/* This function is called during unwinding.  It is intended as a hook
-   for a debugger to intercept exceptions.  CFA is the CFA of the
-   target frame.  HANDLER is the PC to which control will be
-   transferred.  http://agentzh.org/misc/code/systemtap/includes/sys/sdt.h.html*/
-
-void
-test_Unwind_DebugHook (void *cfa __attribute__ ((__unused__)),
-		   void *handler __attribute__ ((__unused__)))
-{
-    /* We only want to use stap probes starting with v3.  Earlier
-    versions added too much startup cost.  */
-    #if defined (HAVE_SYS_SDT_H) && defined (STAP_PROBE2) && _SDT_NOTE_TYPE >= 3
-    STAP_PROBE2 (libgcc, unwind, cfa, handler);
-    #else
-    asm ("");
-    #endif
 }
 
 #ifdef __cplusplus

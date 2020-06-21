@@ -114,12 +114,10 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
         Cleanup code will call back into test_Unwind_Resume and we'll continue Phase 2 there.  */
     uw_copy_context(cur_context, this_context);
     code = test_Unwind_RaiseException_Phase2(exc, cur_context, &frames);
+
     if (code != _URC_INSTALL_CONTEXT)
         return code;
     test_uw_install_context(this_context, cur_context, frames);
-    //TODO: if install context can free the context objects, do it there
-    free(cur_context);
-    free(this_context);
 }
 
 test_Unwind_Reason_Code
@@ -143,10 +141,12 @@ test_Unwind_Resume(struct test_Unwind_Exception *exc)
     /*  private_1 for RaiseException is 0.
         private_1 for ForcedUnwind is the stop function pointer.  */
     if (exc->private_1 == 0)
-        code = _Unwind_RaiseException_Phase2(exc, cur_context, &frames);
+        code = test_Unwind_RaiseException_Phase2(exc, cur_context, &frames);
     else
-        code = _Unwind_ForcedUnwind_Phase2(exc, cur_context, &frames);
-
+        code = test_Unwind_ForcedUnwind_Phase2(exc, cur_context, &frames);
+    
+    if (code != _URC_INSTALL_CONTEXT)
+        return code;
     test_uw_install_context(this_context, cur_context, frames);
 }
 

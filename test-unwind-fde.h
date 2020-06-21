@@ -52,16 +52,16 @@ const struct test_dwarf_cie *
 test_get_cie(const struct test_dwarf_fde *fde);
 
 unsigned char
-test_get_cie_encoding (const struct test_dwarf_cie *cie);
+test_get_cie_encoding(const struct test_dwarf_cie *cie);
 
 unsigned char
-test_get_fde_encoding (const struct test_dwarf_fde *fde);
+test_get_fde_encoding(const struct test_dwarf_fde *fde);
 
 const test_fde *
 find_fde(void *pc, struct test_dwarf_eh_bases *bases);
 
 const test_fde *
-test_next_fde (const test_fde *f);
+test_next_fde(const test_fde *f);
 
 #ifdef __cplusplus
 }

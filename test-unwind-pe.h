@@ -10,7 +10,6 @@ extern "C" {
 #ifndef _UNWIND_H
 typedef unsigned _uleb128_t __attribute__((__mode__(__pointer__)));
 typedef unsigned _sleb128_t __attribute__((__mode__(__pointer__)));
-typedef unsigned test_Unwind_Ptr __attribute__((__mode__(__pointer__)));
 #endif
 
 /*  Pointer encodings  */

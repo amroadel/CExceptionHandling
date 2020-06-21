@@ -7,26 +7,26 @@ extern "C" {
 #endif
 
 unsigned int
-size_of_encoded_value (unsigned char encoding)
+size_of_encoded_value(unsigned char encoding)
 {
     if (encoding == DW_EH_PE_omit)
         return 0;
 
     switch (encoding & 0x07) {
-        case DW_EH_PE_absptr:
-            return sizeof(void *);
-        case DW_EH_PE_udata2:
-            return 2;
-        case DW_EH_PE_udata4:
-            return 4;
-        case DW_EH_PE_udata8:
-            return 8;
-        case DW_EH_PE_sdata2:
-            return 2;
-        case DW_EH_PE_sdata4:
-            return 4;
-        case DW_EH_PE_sdata8:
-            return 8;
+    case DW_EH_PE_absptr:
+        return sizeof(void *);
+    case DW_EH_PE_udata2:
+        return 2;
+    case DW_EH_PE_udata4:
+        return 4;
+    case DW_EH_PE_udata8:
+        return 8;
+    case DW_EH_PE_sdata2:
+        return 2;
+    case DW_EH_PE_sdata4:
+        return 4;
+    case DW_EH_PE_sdata8:
+        return 8;
     }
     abort();
 }
@@ -50,7 +50,7 @@ read_uleb128 (const unsigned char *p, _uleb128_t *val)
 }
 
 const unsigned char *
-read_sleb128 (const unsigned char *p, _sleb128_t *val)
+read_sleb128(const unsigned char *p, _sleb128_t *val)
 {
     unsigned int shift = 0;
     unsigned char byte;
@@ -71,7 +71,7 @@ read_sleb128 (const unsigned char *p, _sleb128_t *val)
 }
 
 const unsigned char *
-read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
+read_encoded_value_with_base(unsigned char encoding, test_Unwind_Ptr base,
 			      const unsigned char *p, test_Unwind_Ptr *val)
 {
     union unaligned {
@@ -102,13 +102,13 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
 
             case DW_EH_PE_uleb128: {
                 _uleb128_t tmp;
-                p = read_uleb128 (p, &tmp);
+                p = read_uleb128(p, &tmp);
                 result = (test_Unwind_Ptr) tmp;
                 } break;
 
             case DW_EH_PE_sleb128: {
                 _sleb128_t tmp;
-                p = read_sleb128 (p, &tmp);
+                p = read_sleb128(p, &tmp);
                 result = (test_Unwind_Ptr) tmp;
                 } break;
 
@@ -143,18 +143,18 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
         }
 
         switch (encoding & 0x70) {
-            case DW_EH_PE_pcrel:
-                result += (test_Unwind_Ptr) u;
-                break;
-            case DW_EH_PE_textrel:
-            case DW_EH_PE_datarel:
-            case DW_EH_PE_funcrel:
-            printf("baseX is %p\n", base);
-                result += base;
-            printf("result is %p\n", result);
-                break;
-            default:
-                break;
+        case DW_EH_PE_pcrel:
+            result += (test_Unwind_Ptr) u;
+            break;
+        case DW_EH_PE_textrel:
+        case DW_EH_PE_datarel:
+        case DW_EH_PE_funcrel:
+        printf("baseX is %p\n", base);
+            result += base;
+        printf("result is %p\n", result);
+            break;
+        default:
+            break;
         }
         if (encoding & DW_EH_PE_indirect) {
             if (result != 0)
@@ -169,34 +169,32 @@ read_encoded_value_with_base (unsigned char encoding, test_Unwind_Ptr base,
 }
 
 test_Unwind_Ptr
-base_of_encoded_value (unsigned char encoding, struct test_Unwind_Context *context)
+base_of_encoded_value(unsigned char encoding, struct test_Unwind_Context *context)
 {
-  if (encoding == DW_EH_PE_omit)
-    return 0;
+    if (encoding == DW_EH_PE_omit)
+        return 0;
 
-  switch (encoding & 0x70)
-    {
+    switch (encoding & 0x70) {
     case DW_EH_PE_absptr:
     case DW_EH_PE_pcrel:
     case DW_EH_PE_aligned:
-      return 0;
-
+        return 0;
     case DW_EH_PE_textrel:
-      return test_Unwind_GetTextRelBase (context);
+        return test_Unwind_GetTextRelBase(context);
     case DW_EH_PE_datarel:
-      return test_Unwind_GetDataRelBase (context);
+        return test_Unwind_GetDataRelBase(context);
     case DW_EH_PE_funcrel:
-      return test_Unwind_GetRegionStart (context);
+        return test_Unwind_GetRegionStart(context);
     }
-  abort();
+    abort();
 }
 
 const unsigned char *
-read_encoded_value (struct test_Unwind_Context *context, unsigned char encoding,
+read_encoded_value(struct test_Unwind_Context *context, unsigned char encoding,
 	const unsigned char *p, test_Unwind_Ptr *val)
 {
-    return read_encoded_value_with_base (encoding,
-        base_of_encoded_value (encoding, context), p, val);
+    return read_encoded_value_with_base(encoding,
+        base_of_encoded_value(encoding, context), p, val);
 }
 
 #ifdef __cplusplus
