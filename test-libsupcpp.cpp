@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <typeinfo>
-#include <unwind.h>
+#include "test-unwind.h"
 // #include "test-unwind-eh.h"
 // #include "test-unwind-pe.h"
 // #include "test-unwind-fde.h"
@@ -39,10 +39,10 @@ struct __cxa_exception {
 	void *			catchTemp;
 	void *			adjustedPtr;
 
-	_Unwind_Exception	unwindHeader;
+	test_Unwind_Exception	unwindHeader;
 };
 
-/*struct test_Unwind_Context{
+/*struct testtest_Unwind_Context{
     void *ra;
     void *base;
     void *lsda;
@@ -73,7 +73,7 @@ void __cxa_throw(void* thrown_exception,
     __cxa_exception *header = ((__cxa_exception *) thrown_exception - 1);
     header->exceptionType = tinfo;
     header->exceptionDestructor = dest;
-    _Unwind_RaiseException(&header->unwindHeader);
+    test_Unwind_RaiseException(&header->unwindHeader);
 
     printf("no handler found, terminate!\n");
     exit(0);
@@ -432,62 +432,62 @@ bool can_handle(const std::type_info *thrown_exception,
 }
 
 
-_Unwind_Reason_Code
+test_Unwind_Reason_Code
     run_landing_pad(
-                 _Unwind_Exception* unwind_exception,
-                 _Unwind_Context* context,
+                 test_Unwind_Exception* unwind_exception,
+                 test_Unwind_Context* context,
                  int exception_type_idx,
                  uintptr_t lp_address)
 {
     int r0 = __builtin_eh_return_data_regno(0);
     int r1 = __builtin_eh_return_data_regno(1);
 
-    _Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
-    _Unwind_SetGR(context, r1, (uintptr_t)(exception_type_idx));
-    _Unwind_SetIP(context, lp_address);
+    test_Unwind_SetGR(context, r0, (uintptr_t)(unwind_exception));
+    test_Unwind_SetGR(context, r1, (uintptr_t)(exception_type_idx));
+    test_Unwind_SetIP(context, lp_address);
 
     return _URC_INSTALL_CONTEXT;
 }
 
 
-_Unwind_Reason_Code __gxx_personality_v0 (
+test_Unwind_Reason_Code __gxx_personality_v0 (
                              int version,
-                             _Unwind_Action actions,
+                             test_Unwind_Action actions,
                              uint64_t exceptionClass,
-                             _Unwind_Exception* unwind_exception,
-                             _Unwind_Context* context)
+                             test_Unwind_Exception* unwind_exception,
+                             test_Unwind_Context* context)
 {
     // Calculate what the instruction pointer was just before the
     // exception was thrown for this stack frame
-    uintptr_t throw_ip = _Unwind_GetIP(context) - 1;
+    uintptr_t throw_ip = test_Unwind_GetIP(context) - 1;
 
     // Get a ptr to the start of the function for this stack frame;
     // this is needed because a lot of the addresses in the LSDA are
     // actually offsets from func_start
-    uintptr_t func_start = _Unwind_GetRegionStart(context);
+    uintptr_t func_start = test_Unwind_GetRegionStart(context);
 
     // Get a pointer to the type_info of the exception being thrown
     __cxa_exception *exception_header =(__cxa_exception*)(unwind_exception+1)-1;
     std::type_info *thrown_exception_type = exception_header->exceptionType;
 
     // Get a pointer to the raw memory address of the LSDA
-    LSDA_ptr raw_lsda = (LSDA_ptr) _Unwind_GetLanguageSpecificData(context);
+    LSDA_ptr raw_lsda = (LSDA_ptr) test_Unwind_GetLanguageSpecificData(context);
 
     // Create an object to hide some part of the LSDA processing
     LSDA lsda(raw_lsda);
 
     //test
-    // struct test_Unwind_Context *context2;
+    // struct testtest_Unwind_Context *context2;
     // struct test_dwarf_eh_bases *bases;
     // const unsigned char* fde = (const unsigned char*)find_fde((void *)(throw_ip + 1), bases);
     // //add_lsda(fde, context2);
     
-    // test_Unwind_FrameState *fs;
-    // test_Unwind_Reason_Code code;
+    // testtest_Unwind_FrameState *fs;
+    // testtest_Unwind_Reason_Code code;
     // //const unsigned char* fde = find_fde((void *)(throw_ip + 1));
     // //add_lsda(fde, context2);
     // code = test_uw_frame_state_for(context2, fs);
-    // void *lsdaa = (void *) _Unwind_GetLanguageSpecificData(context);
+    // void *lsdaa = (void *) test_Unwind_GetLanguageSpecificData(context);
     // printf("real lsda: %p\n", lsdaa);
     // //printf("lsda2: %p\n", lsda);
 
@@ -528,7 +528,7 @@ _Unwind_Reason_Code __gxx_personality_v0 (
 
                 if (can_handle(thrown_exception_type, catch_type)) // order reversed in original
                 {
-                    // If we are on search phase, tell _Unwind_ we can handle this one
+                    // If we are on search phase, tell test_Unwind_ we can handle this one
                     if (actions & _UA_SEARCH_PHASE) return _URC_HANDLER_FOUND;
 
                     // If we are not on search phase then we are on _UA_CLEANUP_PHASE

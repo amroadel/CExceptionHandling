@@ -25,7 +25,9 @@ void foo()
     //      : "=r" (bp));
     bp = __builtin_frame_address(0);
     printf("%p\n", bp);
-    ra = __builtin_extract_return_addr (__builtin_return_address (0));
+    ra = __builtin_return_address (0);
+    printf("%p\n", ra);
+    ra = __builtin_frob_return_addr(ra);
     printf("%p\n", ra);
     printf("%lx\n\n", *((long *)bp));
 
@@ -36,7 +38,7 @@ void foo()
         context.ra = ra;
         printf("%p\n", context.ra);
         //find_fde(context.ra);
-        add_lsda(find_fde(context.ra), &context);
+        //add_lsda(find_fde(context.ra), &context);
         printf("%p\n\n", bp);
         printf("lsda: %p\n\n", context.lsda);
     } ;
@@ -61,7 +63,7 @@ int main(int argc, char *argv[]) {
     // printf ("brk(NULL): %p\n",b);
     // printf ("Hello World!: %p\n",main);
 
-    unsigned char *ptr2 =read_elf(argc, argv);
+    unsigned char *ptr2 =read_elf(argc, argv, ".eh_frame_hdr");
     printf("ptr is %p\n", ptr2);
     // const unsigned char *ptr = &__executable_start;
     // printf("ptr is %p\n", ptr);
@@ -72,7 +74,7 @@ int main(int argc, char *argv[]) {
     const unsigned char *eh_hdr = (const unsigned char *)((unsigned long)ptr2 + (unsigned long)&__executable_start);
     printf("ptr is %p\n", eh_hdr);
     printf("\n");
-    init_eh_frame_hdr(eh_hdr);
+    init_eh_frame_hdr(eh_hdr, &__executable_start);
 
     exception_func();
     bar3();

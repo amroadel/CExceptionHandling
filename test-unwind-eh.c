@@ -127,18 +127,6 @@ test_Unwind_IsExtendedContext(struct test_Unwind_Context *context)
         || (context->flags & EXTENDED_CONTEXT_BIT));
 }
 
-static inline void
-test_Unwind_SetSpColumn(struct test_Unwind_Context *context, void *cfa,
-	test_Unwind_SpTmp *tmp_sp)
-{
-    int size = dwarf_reg_size_table[_builtin_dwarf_sp_column()];
-    if (size == sizeof(test_Unwind_Ptr))
-        tmp_sp->ptr = (test_Unwind_Ptr) cfa;
-    else
-        tmp_sp->word = (test_Unwind_Ptr) cfa;
-    test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column(), tmp_sp);
-}
-
 /*  This function is called during unwinding. It is intended as a hook
    for a debugger to intercept exceptions. CFA is the CFA of the
    target frame. HANDLER is the PC to which control will be
@@ -161,7 +149,7 @@ test_Unwind_DebugHook (void *cfa __attribute__ ((__unused__)),
 test_Unwind_Word
 test_Unwind_GetGR(struct test_Unwind_Context *context, int index)
 {
-    int size, index;
+    int size;
     test_Unwind_Context_Reg_Val val;
 
     #ifdef DWARF_ZERO_REG
@@ -285,6 +273,18 @@ test_Unwind_GRByValue(struct test_Unwind_Context *context, int index)
 {
     index = _DWARF_REG_TO_UNWIND_COLUMN(index);
     return context->by_value[index];
+}
+
+static inline void
+test_Unwind_SetSpColumn(struct test_Unwind_Context *context, void *cfa,
+	test_Unwind_SpTmp *tmp_sp)
+{
+    int size = dwarf_reg_size_table[_builtin_dwarf_sp_column()];
+    if (size == sizeof(test_Unwind_Ptr))
+        tmp_sp->ptr = (test_Unwind_Ptr) cfa;
+    else
+        tmp_sp->word = (test_Unwind_Ptr) cfa;
+    test_Unwind_SetGRPtr(context, _builtin_dwarf_sp_column(), tmp_sp);
 }
 
 /*  Dwarf Interpreter  */
@@ -490,10 +490,10 @@ _install_context(struct test_Unwind_Context *current, struct test_Unwind_Context
 }
 
 void *
-test_uw_frob_return_addr(struct test_Unwind_Context *current __attribute__ ((__unused__)),
+test_uw_frob_return_addr(struct test_Unwind_Context *current __attribute__((__unused__)),
     struct test_Unwind_Context *target)
 {
-    void *ret_addr = __builtin_frob_return_addr (target->ra); //TODO: Check if this is avilable to use directly: https://gcc.gnu.org/onlinedocs/gcc/Return-Address.html
+    void *ret_addr = __builtin_frob_return_addr(target->ra); //TODO: Check if this is avilable to use directly: https://gcc.gnu.org/onlinedocs/gcc/Return-Address.html
     return ret_addr;
 } 
 
@@ -534,14 +534,14 @@ test_extract_cie_info(const struct test_dwarf_cie *cie, struct test_Unwind_Conte
 
     /*  Immediately following this are the code and
         data alignment and return address column.  */
-    p = read_uleb128 (p, &utmp);
+    p = read_uleb128(p, &utmp);
     fs->code_align = (test_Unwind_Word)utmp;
-    p = read_sleb128 (p, &stmp);
+    p = read_sleb128(p, &stmp);
     fs->data_align = (test_Unwind_Sword)stmp;
     if (cie->version == 1) {
         fs->retaddr_column = *p++;
     } else {
-        p = read_uleb128 (p, &utmp);
+        p = read_uleb128(p, &utmp);
         fs->retaddr_column = (test_Unwind_Word)utmp;
     }
     fs->lsda_encoding = DW_EH_PE_omit;
@@ -550,7 +550,7 @@ test_extract_cie_info(const struct test_dwarf_cie *cie, struct test_Unwind_Conte
         follows containing the length of the augmentation field following
         the size.  */
     if (*aug == 'z') {
-        p = read_uleb128 (p, &utmp);
+        p = read_uleb128(p, &utmp);
         ret = p + utmp;
         fs->saw_z = 1;
         ++aug;
@@ -569,7 +569,7 @@ test_extract_cie_info(const struct test_dwarf_cie *cie, struct test_Unwind_Conte
         } else if (aug[0] == 'P') {
             /*  "P" indicates a personality routine in the CIE augmentation.  */
             test_Unwind_Ptr personality;
-            p = read_encoded_value (context, *p, p + 1, &personality);
+            p = read_encoded_value(context, *p, p + 1, &personality);
             fs->personality = (test_Unwind_Personality_Fn) personality;
             aug += 1;
         } else if (aug[0] == 'S') {

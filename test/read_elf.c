@@ -100,8 +100,8 @@ char* get_sectionHeader_string_table(Elf64_Ehdr *hdr)
 
 
 
-/*  Display the section header  */
-static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr )
+/* Display the section header */
+static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr, const char * section)
 {
     Elf64_Addr  eh_frame_v_address;
     char * stringTable= get_sectionHeader_string_table(ehdr);
@@ -112,7 +112,7 @@ static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr )
         char * entry = stringTable + ite->sh_name;
         //This gets the offset of the string we want, the string is null-terminated so printf will detect the end of the string
 
-        if(strcmp(entry, ".eh_frame_hdr")==0)
+        if(strcmp(entry, section)==0)
            {    
                eh_frame_v_address= ite->sh_addr;
                //printf("%ld\n",eh_frame_v_address);
@@ -123,7 +123,7 @@ static Elf64_Addr dump_section_header(Elf64_Ehdr *ehdr, Elf64_Shdr *shdr )
 }
  
 
-unsigned char *read_elf(int argc, char **argv)
+unsigned char *read_elf(int argc, char **argv, const char * section)
 {
     struct argument args;
      strncpy(args.file, argv[optind], FILENAME_SIZE);
@@ -131,11 +131,11 @@ unsigned char *read_elf(int argc, char **argv)
     if (hdl == NULL)
         return NULL;
 
-    /*  retreive pointers for each elf file sections  */
+    /* retreive pointers for each elf file sections */
     Elf64_Shdr *shdr = re_get_section_header(hdl);
     Elf64_Ehdr *ehdr = hdl->ehdr64;
 
-    unsigned char *eh_frame_v_address = (unsigned char *)dump_section_header(ehdr, shdr);
+    unsigned char *eh_frame_v_address = (unsigned char *)dump_section_header(ehdr, shdr, section);
 
     re_free_handle(hdl);
 
