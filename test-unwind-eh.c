@@ -638,6 +638,7 @@ test_execute_cfa_program(const unsigned char *insn_ptr, const unsigned char *ins
         break;
 
     default:
+    abort();
         //gcc_unreachable ();
     }
     }

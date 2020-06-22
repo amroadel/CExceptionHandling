@@ -11,7 +11,7 @@ test_objects = $(build)seppuku.o $(build)throw.o $(build)read_elf.o $(build)test
 aux = $(build)throw.gas $(build)throw.s
 options = -ggdb
 
-build: create_build_dir test_unwind
+build: create_build_dir test
 
 test: $(test_objects)
 	g++ $(options) $(test_objects) -o $(build)test.out
