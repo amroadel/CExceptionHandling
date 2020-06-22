@@ -1152,7 +1152,7 @@ _init_context(struct test_Unwind_Context **context_ptr, void *outer_cfa, void *o
     void *ra = __builtin_extract_return_addr(__builtin_return_address(0));
     test_Unwind_FrameState fs;
     test_Unwind_SpTmp sp_slot;
-    struct test_Unwind_Context * context;
+    struct test_Unwind_Context *context;
 
     context = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
     memset(context, 0, sizeof(struct test_Unwind_Context));
@@ -1359,11 +1359,12 @@ test_extract_cie_info(const struct test_dwarf_cie *cie, struct test_Unwind_Conte
 }
 
 test_Unwind_Reason_Code
-test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
+test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState **fs_ptr)
 {
     const struct test_dwarf_fde *fde;
     const struct test_dwarf_cie *cie;
     const unsigned char *aug, *insn, *end;
+    test_Unwind_FrameState *fs;
 
     fs = (test_Unwind_FrameState *)malloc(sizeof(test_Unwind_FrameState));
     memset(fs, 0, sizeof(test_Unwind_FrameState));
@@ -1412,6 +1413,7 @@ test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameSt
     end = (const unsigned char *)test_next_fde(fde);
     test_execute_cfa_program(insn, end, context, fs);
 
+    *fs_ptr = fs;
     return _URC_NO_REASON;
 }
 

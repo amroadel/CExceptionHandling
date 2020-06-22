@@ -45,7 +45,7 @@ void
 uw_free_context(struct test_Unwind_Context * context);
 
 test_Unwind_Reason_Code
-test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState *fs);
+test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameState **fs_ptr);
 
 test_Unwind_Personality_Fn
 uw_get_personality(test_Unwind_FrameState *fs);
@@ -55,7 +55,7 @@ uw_get_personality(test_Unwind_FrameState *fs);
 #define test_uw_init_context(CONTEXT)                                           \
 do {                                                                            \
     __builtin_unwind_init();                                                    \
-    CONTEXT = _init_context(__builtin_dwarf_cfa(), __builtin_return_address(0));\
+    _init_context(CONTEXT, __builtin_dwarf_cfa(), __builtin_return_address(0)); \
 } while (0) //TODO: unwind_init appears to be practicallly useless. Try it once the library is done
 
 /*  Install TARGET into CURRENT so that we can return to it.  This is a

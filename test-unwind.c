@@ -21,7 +21,7 @@ test_Unwind_RaiseException_Phase2(struct test_Unwind_Exception *exc,
         /*  Step 2: set up the frame state to describe the caller of context.  */
         test_Unwind_FrameState *fs;
         int match_handler;
-        code = test_uw_frame_state_for(context, fs);
+        code = test_uw_frame_state_for(context, &fs);
         /*  Identify when we've reached the handler context placed in Phase 1.  */
         match_handler = (test_uw_identify_context(context) == exc->private_2
             ? _UA_HANDLER_FRAME : 0);
@@ -66,7 +66,7 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
     while (1) {
         /*  Step 2: set up the frame state to describe the caller of cur_context.  */
         test_Unwind_FrameState *fs;
-        code = test_uw_frame_state_for(cur_context, fs);
+        code = test_uw_frame_state_for(cur_context, &fs);
         /*  Hit end of stack with no handler found.  */
         if (code == _URC_END_OF_STACK)
             return _URC_END_OF_STACK;
