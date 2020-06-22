@@ -7,7 +7,7 @@ unwind_objects = $(build)test-unwind.o $(build)test-unwind-pe.o $(build)test-unw
 libsupcpp_objects = $(build)libsupcpp.o
 test_unwind_objects = $(build)unwind.o $(build)read_elf.o $(build)exception_t.o $(unwind_objects)
 test_libsupcpp_objects = $(build)seppuku.o $(build)throw.o $(libsupcpp_objects)
-test_objects = $(build)seppuku.o $(build)throw.o $(build)read_elf.o $(build)libsupcpp-test.o $(unwind_objects)
+test_objects = $(build)seppuku.o $(build)throw.o $(build)read_elf.o $(build)test-libsupcpp.o $(unwind_objects)
 aux = $(build)throw.gas $(build)throw.s
 options = -ggdb
 
@@ -67,8 +67,8 @@ $(build)seppuku.o: $(test)seppuku.c
 	gcc -c $(options) $(test)seppuku.c -o $(build)seppuku.o
 
 # test
-$(build)libsupcpp-test.o: $(src)libsupcpp-test.cpp
-	g++ -c $(options) $(src)libsupcpp-test.cpp -o $(build)libsupcpp-test.o
+$(build)test-libsupcpp.o: $(src)test-libsupcpp.cpp
+	g++ -c $(options) $(src)test-libsupcpp.cpp -o $(build)test-libsupcpp.o
 
 # aux
 throw.gas: $(test)throw.cpp
@@ -79,7 +79,7 @@ throw.s: $(test)throw.cpp
 
 .PHONY: clean create_build_dir
 clean:
-	rm -f $(test_unwind_objects) $(test_libsupcpp_objects) $(aux) $(build)test_libsupcpp.out $(build)test_unwind.out
+	rm -f $(test_unwind_objects) $(test_libsupcpp_objects) $(test_objects) $(aux) $(build)test_libsupcpp.out $(build)test_unwind.out $(build)test.out
 
 create_build_dir:
 	mkdir -p build

@@ -3,7 +3,7 @@
 #include <typeinfo>
 #include "test-unwind.h"
 // #include "test-unwind-eh.h"
-// #include "test-unwind-pe.h"
+#include "test-unwind-pe.h"
 // #include "test-unwind-fde.h"
 
 
@@ -126,25 +126,25 @@ typedef const uint8_t* LSDA_ptr;
 typedef uint64_t LSDA_line;
 
 //This function receives a pointer the first byte to be decoded and the address of where to put the decoded value.
-const unsigned char *
-read_uleb128 (const unsigned char *p, uint64_t *val)
-{
-  uint64_t shift = 0;
-  uint64_t result = 0;
-  unsigned char byte;
+// const unsigned char *
+// read_uleb128 (const unsigned char *p, uint64_t *val)
+// {
+//   uint64_t shift = 0;
+//   uint64_t result = 0;
+//   unsigned char byte;
 
-  do
-    {
-      byte = *p++; 
-      // Shifting the byte to the left and propagating the new byte to it (if there's any)
-      result |= ((uint64_t)byte & 0x7f) << shift;
-      shift += 7;
-    }
-  // if the 8th bit is 1, this means that there still another byte to be concatinated to the current byte (if zero, then decoding is done)
-  while (byte & 0x80);
-  *val = result;
-  return p;
-}
+//   do
+//     {
+//       byte = *p++; 
+//       // Shifting the byte to the left and propagating the new byte to it (if there's any)
+//       result |= ((uint64_t)byte & 0x7f) << shift;
+//       shift += 7;
+//     }
+//   // if the 8th bit is 1, this means that there still another byte to be concatinated to the current byte (if zero, then decoding is done)
+//   while (byte & 0x80);
+//   *val = result;
+//   return p;
+// }
 
 // This function recieves a pointer to a ttype entry and return the corrisponding type_info
 // It's an implementation of three different functions from unwind-pe.h specific to our case and cannot be generalized for different encoding and size

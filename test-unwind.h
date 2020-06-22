@@ -38,6 +38,7 @@ typedef enum {
     #endif
 } test_Unwind_Action;
 
+struct test_Unwind_Exception;
 typedef void (*test_Unwind_Exception_Cleanup_Fn)
     (test_Unwind_Reason_Code,
     struct test_Unwind_Exception *);
