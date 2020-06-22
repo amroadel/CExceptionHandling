@@ -22,8 +22,8 @@ void
 test_Unwind_DebugHook(void *cfa __attribute__ ((__unused__)),
     void *handler __attribute__ ((__unused__)));
 
-struct test_Unwind_Context * __attribute__((noinline))
-_init_context(void *outer_cfa, void *outer_ra);
+void __attribute__((noinline))
+_init_context(struct test_Unwind_Context **context_ptr, void *outer_cfa, void *outer_ra);
 
 void
 test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs);
@@ -31,8 +31,8 @@ test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameSta
 test_Unwind_Ptr
 test_uw_identify_context(struct test_Unwind_Context *context);
 
-struct test_Unwind_Context *
-uw_copy_context(struct test_Unwind_Context *source);
+void
+uw_copy_context(struct test_Unwind_Context **target, struct test_Unwind_Context *source);
 
 long
 _install_context(struct test_Unwind_Context *current, struct test_Unwind_Context *target);

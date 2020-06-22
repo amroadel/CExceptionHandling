@@ -60,8 +60,8 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
         Do not modify the stack yet.  */
     
     /*  Step 1: initialize the context to describe the current frame.  */
-    test_uw_init_context(this_context);
-    cur_context = uw_copy_context(this_context);
+    test_uw_init_context(&this_context);
+    uw_copy_context(&cur_context, this_context);
 
     while (1) {
         /*  Step 2: set up the frame state to describe the caller of cur_context.  */
@@ -100,7 +100,7 @@ test_Unwind_RaiseException(struct test_Unwind_Exception *exc)
         Find cleanup code and execute it.
         We'll only locate the first such frame here.
         Cleanup code will call back into test_Unwind_Resume and we'll continue Phase 2 there.  */
-    cur_context = uw_copy_context(this_context);
+    uw_copy_context(&cur_context, this_context);
     code = test_Unwind_RaiseException_Phase2(exc, cur_context, &frames);
 
     if (code != _URC_INSTALL_CONTEXT)
@@ -130,7 +130,7 @@ test_Unwind_Resume(struct test_Unwind_Exception *exc)
     unsigned long frames;
 
     test_uw_init_context(this_context);
-    cur_context = uw_copy_context(this_context);
+    uw_copy_context(&cur_context, this_context);
 
     /*  private_1 for RaiseException is 0.
         private_1 for ForcedUnwind is the stop function pointer.  */

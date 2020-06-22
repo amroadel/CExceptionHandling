@@ -1146,13 +1146,13 @@ _update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs)
     #endif
 }
 
-struct test_Unwind_Context * __attribute__((noinline))
-_init_context(void *outer_cfa, void *outer_ra)
+void __attribute__((noinline))
+_init_context(struct test_Unwind_Context **context_ptr, void *outer_cfa, void *outer_ra)
 {
     void *ra = __builtin_extract_return_addr(__builtin_return_address(0));
     test_Unwind_FrameState fs;
     test_Unwind_SpTmp sp_slot;
-    struct test_Unwind_Context *context;
+    struct test_Unwind_Context * context;
 
     context = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
     memset(context, 0, sizeof(struct test_Unwind_Context));
@@ -1175,7 +1175,7 @@ _init_context(void *outer_cfa, void *outer_ra)
 
     context->ra = __builtin_extract_return_addr(outer_ra);
     /*  Special Handling: aarch64 needs modification for return address value  */
-    return context;
+    *context_ptr = context;
 }
 
 void
@@ -1200,13 +1200,13 @@ test_uw_identify_context(struct test_Unwind_Context *context)
         return test_Unwind_GetCFA(context) + test_Unwind_IsSignalFrame(context);
 }
 
-struct test_Unwind_Context *
-uw_copy_context(struct test_Unwind_Context *source)
+void
+uw_copy_context(struct test_Unwind_Context **target, struct test_Unwind_Context *source)
 {
-    struct test_Unwind_Context * target;
-    target = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
-    *target = *source;
-    return target;
+    struct test_Unwind_Context * temp;
+    temp = (struct test_Unwind_Context *)malloc(sizeof(struct test_Unwind_Context));
+    *temp = *source;
+    *target = temp;
 }
 
 long
