@@ -68,7 +68,7 @@ base_from_header(unsigned char encoding)
 const struct test_dwarf_cie *
 test_get_cie(const struct test_dwarf_fde *f)
 {
-    return (const void *)&f->CIE_delta - f->CIE_delta;
+    return (const struct test_dwarf_cie *)((const unsigned char *)&f->CIE_delta - f->CIE_delta);
 }
 
 unsigned char

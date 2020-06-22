@@ -34,13 +34,13 @@ struct test_dwarf_cie {
     test_uword length;
     test_sword CIE_id;
     test_ubyte version;
-    const unsigned char *augmentation;
+    unsigned char augmentation[];
 }__attribute__((packed, aligned (__alignof__ (void *))));
 
 struct test_dwarf_fde {
     test_uword length;
     test_sword CIE_delta;
-    const unsigned char *pc_begin;
+    unsigned char pc_begin[];
 }__attribute__((packed, aligned (__alignof__ (void *))));
 typedef struct test_dwarf_fde test_fde;
 
