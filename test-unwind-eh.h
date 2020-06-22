@@ -22,8 +22,8 @@ void
 test_Unwind_DebugHook(void *cfa __attribute__ ((__unused__)),
     void *handler __attribute__ ((__unused__)));
 
-void __attribute__((noinline))
-_init_context(struct test_Unwind_Context *context, void *outer_cfa, void *outer_ra);
+struct test_Unwind_Context * __attribute__((noinline))
+_init_context(void *outer_cfa, void *outer_ra);
 
 void
 test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameState *fs);
@@ -31,8 +31,8 @@ test_uw_update_context(struct test_Unwind_Context *context, test_Unwind_FrameSta
 test_Unwind_Ptr
 test_uw_identify_context(struct test_Unwind_Context *context);
 
-void
-uw_copy_context(struct test_Unwind_Context *target, struct test_Unwind_Context *source);
+struct test_Unwind_Context *
+uw_copy_context(struct test_Unwind_Context *source);
 
 long
 _install_context(struct test_Unwind_Context *current, struct test_Unwind_Context *target);
@@ -55,7 +55,7 @@ uw_get_personality(test_Unwind_FrameState *fs);
 #define test_uw_init_context(CONTEXT)                                           \
 do {                                                                            \
     __builtin_unwind_init();                                                    \
-    _init_context(CONTEXT, __builtin_dwarf_cfa(), __builtin_return_address(0)); \
+    CONTEXT = _init_context(__builtin_dwarf_cfa(), __builtin_return_address(0));\
 } while (0) //TODO: unwind_init appears to be practicallly useless. Try it once the library is done
 
 /*  Install TARGET into CURRENT so that we can return to it.  This is a
