@@ -123,7 +123,7 @@ test_Unwind_ForcedUnwind(struct test_Unwind_Exception *exc, test_Unwind_Stop_Fn 
 }
 
 void
-test_Unwind_Resume(struct test_Unwind_Exception *exc)
+_Unwind_Resume(struct test_Unwind_Exception *exc)
 {
     struct test_Unwind_Context *this_context, *cur_context;
     test_Unwind_Reason_Code code;
