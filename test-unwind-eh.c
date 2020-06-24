@@ -1150,7 +1150,7 @@ void __attribute__((noinline))
 _init_context(struct test_Unwind_Context **context_ptr, void *outer_cfa, void *outer_ra)
 {
     void *ra = __builtin_extract_return_addr(__builtin_return_address(0));
-    test_Unwind_FrameState fs;
+    test_Unwind_FrameState *fs;
     test_Unwind_SpTmp sp_slot;
     struct test_Unwind_Context *context;
 
@@ -1167,11 +1167,11 @@ _init_context(struct test_Unwind_Context **context_ptr, void *outer_cfa, void *o
 
     /*  Force the frame state to use the known cfa value.  */ //TODO: we should check why??
     test_Unwind_SetSpColumn(context, outer_cfa, &sp_slot);
-    fs.regs.cfa_how = CFA_REG_OFFSET;
-    fs.regs.cfa_reg = _builtin_dwarf_sp_column();
-    fs.regs.cfa_offset = 0;
+    fs->regs.cfa_how = CFA_REG_OFFSET;
+    fs->regs.cfa_reg = _builtin_dwarf_sp_column();
+    fs->regs.cfa_offset = 0;
 
-    _update_context(context, &fs);
+    _update_context(context, fs);
 
     context->ra = __builtin_extract_return_addr(outer_ra);
     /*  Special Handling: aarch64 needs modification for return address value  */
@@ -1404,7 +1404,7 @@ test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameSt
         test_Unwind_Ptr lsda;
         aug = read_encoded_value(context, fs->lsda_encoding, aug, &lsda);
         context->lsda = (void *)lsda;
-        printf("generated lsda: %p\n", lsda);
+        printf("generated lsda: 0x%lx\n", lsda);
     }
 
     /*  Then the insns in the FDE up to our target PC.  */

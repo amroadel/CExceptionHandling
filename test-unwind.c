@@ -129,7 +129,7 @@ test_Unwind_Resume(struct test_Unwind_Exception *exc)
     test_Unwind_Reason_Code code;
     unsigned long frames;
 
-    test_uw_init_context(this_context);
+    test_uw_init_context(&this_context);
     uw_copy_context(&cur_context, this_context);
 
     /*  private_1 for RaiseException is 0.

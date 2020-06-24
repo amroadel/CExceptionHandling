@@ -2,6 +2,7 @@
 #include "../test-unwind-eh.h"
 #ifdef TEST_UNWIND
 #include "read_elf.h"
+#include "../test-unwind-fde.h"
 #endif
 
 extern char __executable_start;

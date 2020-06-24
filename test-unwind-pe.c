@@ -94,52 +94,51 @@ read_encoded_value_with_base(unsigned char encoding, test_Unwind_Ptr base,
         p = (const unsigned char *) (test_Unwind_Ptr) (a + sizeof (void *));
     } else {
         switch (encoding & 0x0f) {
-            case DW_EH_PE_absptr:
-                result = (test_Unwind_Ptr) u->ptr;
-                printf("result1 is %p\n", result);
-                p += sizeof (void *);
-                break;
+        case DW_EH_PE_absptr:
+            result = (test_Unwind_Ptr) u->ptr;
+            p += sizeof (void *);
+            break;
 
-            case DW_EH_PE_uleb128: {
-                _uleb128_t tmp;
-                p = read_uleb128(p, &tmp);
-                result = (test_Unwind_Ptr) tmp;
-                } break;
+        case DW_EH_PE_uleb128: {
+            _uleb128_t tmp;
+            p = read_uleb128(p, &tmp);
+            result = (test_Unwind_Ptr) tmp;
+            } break;
 
-            case DW_EH_PE_sleb128: {
-                _sleb128_t tmp;
-                p = read_sleb128(p, &tmp);
-                result = (test_Unwind_Ptr) tmp;
-                } break;
+        case DW_EH_PE_sleb128: {
+            _sleb128_t tmp;
+            p = read_sleb128(p, &tmp);
+            result = (test_Unwind_Ptr) tmp;
+            } break;
 
-            case DW_EH_PE_udata2:
-                result = u->u2;
-                p += 2;
-                break;
-            case DW_EH_PE_udata4:
-                result = u->u4;
-                p += 4;
-                break;
-            case DW_EH_PE_udata8:
-                result = u->u8;
-                p += 8;
-                break;
+        case DW_EH_PE_udata2:
+            result = u->u2;
+            p += 2;
+            break;
+        case DW_EH_PE_udata4:
+            result = u->u4;
+            p += 4;
+            break;
+        case DW_EH_PE_udata8:
+            result = u->u8;
+            p += 8;
+            break;
 
-            case DW_EH_PE_sdata2:
-                result = u->s2;
-                p += 2;
-                break;
-            case DW_EH_PE_sdata4:
-                result = u->s4;
-                p += 4;
-                break;
-            case DW_EH_PE_sdata8:
-                result = u->s8;
-                p += 8;
-                break;
+        case DW_EH_PE_sdata2:
+            result = u->s2;
+            p += 2;
+            break;
+        case DW_EH_PE_sdata4:
+            result = u->s4;
+            p += 4;
+            break;
+        case DW_EH_PE_sdata8:
+            result = u->s8;
+            p += 8;
+            break;
 
-            default:
-                abort();
+        default:
+            abort();
         }
 
         switch (encoding & 0x70) {
@@ -149,9 +148,9 @@ read_encoded_value_with_base(unsigned char encoding, test_Unwind_Ptr base,
         case DW_EH_PE_textrel:
         case DW_EH_PE_datarel:
         case DW_EH_PE_funcrel:
-        printf("baseX is %p\n", base);
+        //printf("baseX is %p\n", base);
             result += base;
-        printf("result is %p\n", result);
+        //printf("result is %p\n", result);
             break;
         default:
             break;
