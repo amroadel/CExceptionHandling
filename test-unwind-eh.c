@@ -1374,7 +1374,7 @@ test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameSt
     if (context->ra == 0)
         return _URC_END_OF_STACK;
     
-    fde = find_fde(context->ra, &context->bases);
+    fde = find_fde(context->ra + test_Unwind_IsSignalFrame(context) - 1, &context->bases);
     if (fde == NULL)
         return _URC_END_OF_STACK;
 
@@ -1404,7 +1404,7 @@ test_uw_frame_state_for(struct test_Unwind_Context *context, test_Unwind_FrameSt
         test_Unwind_Ptr lsda;
         aug = read_encoded_value(context, fs->lsda_encoding, aug, &lsda);
         context->lsda = (void *)lsda;
-        printf("generated lsda: 0x%lx\n", lsda);
+        //printf("generated lsda: 0x%lx\n", lsda);
     }
 
     /*  Then the insns in the FDE up to our target PC.  */

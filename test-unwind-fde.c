@@ -138,7 +138,7 @@ linear_search_fde(void *pc)
         p = read_encoded_value_with_base(header.entry_encoding,
         (test_Unwind_Ptr)header.self, p, &fde);
 
-        if (ip > base) {
+        if (ip > base) { //TODO: check if it is possible at all to have a call as the first instruction
             if (i + 1 == header.count)
                 return (const test_fde *)fde;
             p = read_encoded_value_with_base(header.entry_encoding,

@@ -14,11 +14,11 @@ options = -ggdb
 build: create_build_dir test
 
 test: $(test_objects)
-	g++ $(options) $(test_objects) -o $(build)test.out
+	gcc $(options) $(test_objects) -o $(build)test.out
 	rm $(test_objects)
 
 test_unwind: $(test_unwind_objects)
-	g++ $(options) $(test_unwind_objects) -o $(build)test_unwind.out
+	gcc $(options) $(test_unwind_objects) -o $(build)test_unwind.out
 	rm $(test_unwind_objects)
 
 test_libsupcpp: $(test_libsupcpp_objects)
@@ -26,7 +26,7 @@ test_libsupcpp: $(test_libsupcpp_objects)
 	rm $(test_libsupcpp_objects)
 
 test_all: $(test_objects)
-	g++ $(options) $(test_objects) -o $(build)test.out
+	gcc $(options) $(test_objects) -o $(build)test.out
 
 test_unwind_all: $(test_unwind_objects)
 	gcc $(options) $(test_unwind_objects) -o $(build)test_unwind.out
