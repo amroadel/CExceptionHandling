@@ -68,7 +68,7 @@ do {                                                                            
 do {                                                                            \
     long offset = _install_context((CURRENT), (TARGET));                        \
     void *handler = test_uw_frob_return_addr((CURRENT), (TARGET));              \
-    test_Unwind_DebugHook((void *)test_Unwind_GetCFA(TARGET), handler);                 \
+    test_Unwind_DebugHook((void *)test_Unwind_GetCFA(TARGET), handler);         \
     uw_free_context(CURRENT);                                                   \
     uw_free_context(TARGET);                                                    \
     test_Unwind_Frames_Extra(FRAMES);					                        \

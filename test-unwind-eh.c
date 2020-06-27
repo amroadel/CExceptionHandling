@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifndef __STACK_GROWS_DOWNWARD__    // TODO: This needs more resreach
-#define __STACK_GROWS_DOWNWARD__ 0
+#define __STACK_GROWS_DOWNWARD__ 1
 #endif
 
 #define _UNWIND_COLUMN_IN_RANGE(x) ((x) <= _DWARF_FRAME_REGISTERS)
@@ -1212,50 +1212,57 @@ uw_copy_context(struct test_Unwind_Context **target, struct test_Unwind_Context 
 long
 _install_context(struct test_Unwind_Context *current, struct test_Unwind_Context *target)
 {
-    test_Unwind_SpTmp sp_slot; 
+    // test_Unwind_SpTmp sp_slot;
 
     /*  If the target frame does not have a saved stack pointer,
         then set up the target's CFA.  */
-    if (!test_Unwind_GetGRPtr (target, _builtin_dwarf_sp_column()))
-        test_Unwind_SetSpColumn (target, target->cfa, &sp_slot);
+    // if (!test_Unwind_GetGRPtr(target, _builtin_dwarf_sp_column()))
+    //     test_Unwind_SetSpColumn(target, target->cfa, &sp_slot);
 
     for (int i = 0; i < _DWARF_FRAME_REGISTERS; ++i) {
-        void *c = (void *) (test_Unwind_Internal_Ptr) current->reg[i];
-        void *t = (void *) (test_Unwind_Internal_Ptr)target->reg[i];
-
-        //gcc_assert (current->by_value[i] == 0);
+        void *c = (void *)(test_Unwind_Internal_Ptr)current->reg[i];
+        void *t = (void *)(test_Unwind_Internal_Ptr)target->reg[i];
             
         if (target->by_value[i] && c) {
             test_Unwind_Word w;
             test_Unwind_Ptr p;
-            if (dwarf_reg_size_table[i] == sizeof (test_Unwind_Word)) {
-                w = (test_Unwind_Internal_Ptr) t;
-                memcpy (c, &w, sizeof (test_Unwind_Word));
+            if (dwarf_reg_size_table[i] == sizeof(test_Unwind_Word)) {
+                w = (test_Unwind_Internal_Ptr)t;
+                memcpy(c, &w, sizeof (test_Unwind_Word));
             }
             else {
-                //gcc_assert (dwarf_reg_size_table[i] == sizeof (test_Unwind_Ptr));
-                p = (test_Unwind_Internal_Ptr) t;
-                memcpy (c, &p, sizeof (test_Unwind_Ptr));
+                p = (test_Unwind_Internal_Ptr)t;
+                memcpy(c, &p, sizeof (test_Unwind_Ptr));
             }
         } else if (t && c && t != c) {
-            memcpy (c, t, dwarf_reg_size_table[i]);
+            memcpy(c, t, dwarf_reg_size_table[i]);
         }
     }
+
+    if (__STACK_GROWS_DOWNWARD__)
+        return target->cfa - current->cfa + target->args_size;
+    else
+        return current->cfa - target->cfa - target->args_size;
 
     /*  If the current frame doesn't have a saved stack pointer, then we
         need to rely on EH_RETURN_STACKADJ_RTX to get our target stack
         pointer value reloaded.  */
-    if (!test_Unwind_GetGRPtr (current, _builtin_dwarf_sp_column())) {
-        void *target_cfa;
-        target_cfa = test_Unwind_GetPtr (target, _builtin_dwarf_sp_column());
+    /*  This was the original code from libgcc. You might be wondering why
+        would libgcc do it this way. The answer is, we don't know, and we
+        don't really care at this point. If you really want to know then you
+        might want to check out how __builtin_eh_return() works first, then,
+        and only then, come back here.  */
+    // if (!test_Unwind_GetGRPtr (current, _builtin_dwarf_sp_column())) {
+    //     void *target_cfa;
+    //     target_cfa = test_Unwind_GetPtr (target, _builtin_dwarf_sp_column());
 
-        /*  We adjust SP by the difference between CURRENT and TARGET's CFA.  */
-        if (__STACK_GROWS_DOWNWARD__)
-            return target_cfa - current->cfa + target->args_size;
-        else
-            return current->cfa - target_cfa - target->args_size;
-    }
-    return 0;
+    //     /*  We adjust SP by the difference between CURRENT and TARGET's CFA.  */
+    //     if (__STACK_GROWS_DOWNWARD__)
+    //         return target_cfa - current->cfa + target->args_size;
+    //     else
+    //         return current->cfa - target_cfa - target->args_size;
+    // }
+    // return 0;
 }
 
 void *
@@ -1286,7 +1293,7 @@ test_extract_cie_info(const struct test_dwarf_cie *cie, struct test_Unwind_Conte
     /*  g++ v2 "eh" has pointer immediately following augmentation string,
         so it must be handled first.  */
     if (aug[0] == 'e' && aug[1] == 'h') {
-        //fs->eh_ptr = read_pointer (p); //TODO: Check for read_pointer() DONE, hopfully
+        //fs->eh_ptr = read_pointer (p); //TODO(DONE): Check for read_pointer(). It should work now, hopfully
         fs->eh_ptr = (void *)(*(test_Unwind_Internal_Ptr *)p);
         p += sizeof(test_Unwind_Internal_Ptr *);
         aug += 2;
