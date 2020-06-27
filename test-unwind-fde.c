@@ -1,6 +1,7 @@
 #include "test-unwind-fde.h"
 #include "test-unwind-pe.h"
 #include "stdlib.h"
+#include "stdio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -123,6 +124,24 @@ test_get_fde_encoding(const struct test_dwarf_fde *fde)
     return test_get_cie_encoding(test_get_cie(fde));
 }
 
+unsigned long
+get_fde_range(const struct test_dwarf_fde *fde)
+{
+    unsigned char encoding;
+    const unsigned char *p;
+    test_Unwind_Ptr range;
+
+    encoding = test_get_fde_encoding(fde);
+    /*  we are forcing the encoding here,
+        this might cause errors if the format of eh_frame changes  */
+    encoding &= 0x0F;
+    p = (const unsigned char *)fde + sizeof(*fde);
+    p += size_of_encoded_value(encoding);
+    read_encoded_value_with_base(encoding, 0, p, &range);
+
+    return (unsigned long)range;
+}
+
 const test_fde *
 linear_search_fde(void *pc)
 {
@@ -139,8 +158,12 @@ linear_search_fde(void *pc)
         (test_Unwind_Ptr)header.self, p, &fde);
 
         if (ip > base) { //TODO: check if it is possible at all to have a call as the first instruction
-            if (i + 1 == header.count)
-                return (const test_fde *)fde;
+            if (i + 1 == header.count) {
+                if (ip < base + get_fde_range((const struct test_dwarf_fde *)fde))
+                    return (const test_fde *)fde;
+                else
+                    return NULL;
+            }
             p = read_encoded_value_with_base(header.entry_encoding,
             (test_Unwind_Ptr)header.self, p, &base);
             if (base > ip)
