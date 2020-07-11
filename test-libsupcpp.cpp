@@ -6,7 +6,16 @@
 #include "test-unwind-pe.h"
 // #include "test-unwind-fde.h"
 
+#ifndef PROBE2
+#define PROBE2(name, arg1, arg2)
+#endif
 
+// See below for C++
+#ifndef _GLIBCXX_NOTHROW
+# ifndef __cplusplus
+#  define _GLIBCXX_NOTHROW __attribute__((__nothrow__))
+# endif
+#endif
 
 // TODO: these should be in stdint
 typedef unsigned char uint8_t;
@@ -48,6 +57,46 @@ struct __cxa_exception {
     void *lsda;
 };*/
 
+// Each thread in a C++ program has access to a __cxa_eh_globals object.
+struct __cxa_eh_globals
+{
+  __cxa_exception *caughtExceptions;
+  unsigned int uncaughtExceptions;
+
+};
+
+// Single-threaded fallback buffer.
+__cxa_eh_globals eh_globals;
+
+// The __cxa_eh_globals for the current thread can be obtained by using
+// either of the following functions.  The "fast" version assumes at least
+// one prior call of __cxa_get_globals has been made from the current
+// thread, so no initialization is necessary.
+__cxa_eh_globals*
+__cxa_get_globals_fast() _GLIBCXX_NOTHROW
+{ return &eh_globals; }
+
+__cxa_eh_globals*
+__cxa_get_globals() _GLIBCXX_NOTHROW
+{ return &eh_globals; }
+
+// Acquire the C++ exception header from the generic exception header.
+inline __cxa_exception *
+__get_exception_header_from_ue (struct test_Unwind_Exception *exc)
+{
+  return reinterpret_cast<__cxa_exception *>(exc + 1) - 1;
+}
+
+inline void*
+__gxx_caught_object(struct test_Unwind_Exception* eo)
+{
+  // Bad as it looks, this actually works for dependent exceptions too.
+  __cxa_exception* header = __get_exception_header_from_ue (eo);
+  return header->adjustedPtr;
+}
+
+/********************************************************************************/
+
 void* __cxa_allocate_exception(size_t thrown_size) noexcept
 {
     void *ret;
@@ -79,14 +128,73 @@ void __cxa_throw(void* thrown_exception,
     exit(0);
 }
 
-void __cxa_begin_catch()
+void * __cxa_begin_catch(void *exc_obj_in)
 {
     printf("begin FTW\n");
+    test_Unwind_Exception *exceptionObject
+    = reinterpret_cast <test_Unwind_Exception *>(exc_obj_in);
+    __cxa_eh_globals *globals = __cxa_get_globals ();
+    __cxa_exception *prev = globals->caughtExceptions;
+    __cxa_exception *header = __get_exception_header_from_ue (exceptionObject);
+    void* objectp;
+
+    int count = header->handlerCount;
+    // Count is less than zero if this exception was rethrown from an
+    // immediately enclosing region.
+    if (count < 0)
+        count = -count + 1;
+    else
+        count += 1;
+
+    header->handlerCount = count;
+    globals->uncaughtExceptions -= 1;
+
+    if (header != prev)
+    {
+        header->nextException = prev;
+        globals->caughtExceptions = header;
+    }
+
+    objectp = __gxx_caught_object(exceptionObject);
+    PROBE2 (catch, objectp, header->exceptionType);
+    return objectp;
+
 }
 
 void __cxa_end_catch()
 {
     printf("end FTW\n");
+    __cxa_eh_globals *globals = __cxa_get_globals_fast ();
+    __cxa_exception *header = globals->caughtExceptions;
+
+    // A rethrow of a foreign exception will be removed from the
+    // the exception stack immediately by __cxa_rethrow.
+    if (!header)
+        return;
+
+    int count = header->handlerCount;
+    if (count < 0)
+    {
+        // This exception was rethrown.  Decrement the (inverted) catch
+        // count and remove it from the chain when it reaches zero.
+        if (++count == 0)
+            globals->caughtExceptions = header->nextException;
+    }
+    else if (--count == 0)
+    {
+      // Handling for this exception is complete.  Destroy the object.
+      globals->caughtExceptions = header->nextException;
+      test_Unwind_DeleteException (&header->unwindHeader);
+      return;
+    }
+    else if (count < 0)
+    {
+        // A bug in the exception handling library or compiler.
+        printf("no handler found, terminate!\n");
+        exit(0);
+    }
+        
+    header->handlerCount = count;
 }
 
 

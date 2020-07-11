@@ -14,7 +14,7 @@ options = -ggdb
 build: create_build_dir test
 
 test: $(test_objects)
-	gcc $(options) $(test_objects) -o $(build)test.out
+	g++ $(options) $(test_objects) -o $(build)test.out
 	rm $(test_objects)
 
 test_unwind: $(test_unwind_objects)

@@ -145,7 +145,11 @@ _Unwind_Resume(struct test_Unwind_Exception *exc)
 }
 
 void
-test_Unwind_DeleteException(struct test_Unwind_Exception *exc);
+test_Unwind_DeleteException(struct test_Unwind_Exception *exc)
+{
+    if (exc->exception_cleanup)
+    (*exc->exception_cleanup) (_URC_FOREIGN_EXCEPTION_CAUGHT, exc);
+}
 
 #ifdef __cplusplus
 }

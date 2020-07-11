@@ -36,10 +36,19 @@ void catchit() {
 
     printf("catchit handled the exception\n");
 }
-
+void catchit2() {
+    try {
+        
+        throw 5;
+    }
+    catch (int& e)
+    {
+        printf("An exception occurred. %i\n", e);
+    }
+}
 extern "C" {
     void seppuku() {
-        catchit();
+        catchit2();
     }
 }
 
