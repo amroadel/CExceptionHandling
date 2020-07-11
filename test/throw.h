@@ -1,4 +1,6 @@
-struct Exception {};
+struct Exception {
+    int num;
+};
 
 #ifdef __cplusplus
 extern "C" {
