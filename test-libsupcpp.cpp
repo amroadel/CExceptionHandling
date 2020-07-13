@@ -637,7 +637,10 @@ test_Unwind_Reason_Code __gxx_personality_v0 (
                 if (can_handle(thrown_exception_type, catch_type)) // order reversed in original
                 {
                     // If we are on search phase, tell test_Unwind_ we can handle this one
-                    if (actions & _UA_SEARCH_PHASE) return _URC_HANDLER_FOUND;
+                    if (actions & _UA_SEARCH_PHASE) {
+                        exception_header->adjustedPtr = unwind_exception + 1;
+                        return _URC_HANDLER_FOUND;
+                    }
 
                     // If we are not on search phase then we are on _UA_CLEANUP_PHASE
                     // and we need to install the context

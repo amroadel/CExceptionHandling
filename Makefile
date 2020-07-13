@@ -22,7 +22,7 @@ test_unwind: $(test_unwind_objects)
 	rm $(test_unwind_objects)
 
 test_libsupcpp: $(test_libsupcpp_objects)
-	gcc $(options) $(test_libsupcpp_objects) -o $(build)test_libsupcpp.out
+	g++ $(options) $(test_libsupcpp_objects) -o $(build)test_libsupcpp.out
 	rm $(test_libsupcpp_objects)
 
 test_all: $(test_objects)

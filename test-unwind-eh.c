@@ -1229,8 +1229,7 @@ _install_context(struct test_Unwind_Context *current, struct test_Unwind_Context
             if (dwarf_reg_size_table[i] == sizeof(test_Unwind_Word)) {
                 w = (test_Unwind_Internal_Ptr)t;
                 memcpy(c, &w, sizeof (test_Unwind_Word));
-            }
-            else {
+            } else {
                 p = (test_Unwind_Internal_Ptr)t;
                 memcpy(c, &p, sizeof (test_Unwind_Ptr));
             }
@@ -1240,9 +1239,9 @@ _install_context(struct test_Unwind_Context *current, struct test_Unwind_Context
     }
 
     if (__STACK_GROWS_DOWNWARD__)
-        return target->cfa - current->cfa + target->args_size;
+        return target->cfa - current->cfa;
     else
-        return current->cfa - target->cfa - target->args_size;
+        return current->cfa - target->cfa;
 
     /*  If the current frame doesn't have a saved stack pointer, then we
         need to rely on EH_RETURN_STACKADJ_RTX to get our target stack
