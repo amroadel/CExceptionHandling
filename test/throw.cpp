@@ -43,7 +43,7 @@ void catchit() {
 
     printf("catchit handled the exception\n");
 }
-void catchit2() {
+/*void catchit2() {
     try {
         
         throw 5;
@@ -52,7 +52,7 @@ void catchit2() {
     {
         printf("An exception occurred. %i\n", e);
     }
-}
+}*/
 extern "C" {
     void seppuku() {
         char str[] = "some random string";

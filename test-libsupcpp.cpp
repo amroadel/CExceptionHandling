@@ -163,10 +163,10 @@ void * __cxa_begin_catch(void *exc_obj_in)
 
 void __cxa_end_catch()
 {
-    printf("end FTW\n");
+    
     __cxa_eh_globals *globals = __cxa_get_globals_fast ();
     __cxa_exception *header = globals->caughtExceptions;
-
+   
     // A rethrow of a foreign exception will be removed from the
     // the exception stack immediately by __cxa_rethrow.
     if (!header)
@@ -175,6 +175,7 @@ void __cxa_end_catch()
     int count = header->handlerCount;
     if (count < 0)
     {
+        
         // This exception was rethrown.  Decrement the (inverted) catch
         // count and remove it from the chain when it reaches zero.
         if (++count == 0)
@@ -182,10 +183,10 @@ void __cxa_end_catch()
     }
     else if (--count == 0)
     {
-      // Handling for this exception is complete.  Destroy the object.
-      globals->caughtExceptions = header->nextException;
-      test_Unwind_DeleteException (&header->unwindHeader);
-      return;
+        // Handling for this exception is complete.  Destroy the object.
+        globals->caughtExceptions = header->nextException;
+        //test_Unwind_DeleteException (&header->unwindHeader);
+        return;
     }
     else if (count < 0)
     {
@@ -193,8 +194,10 @@ void __cxa_end_catch()
         printf("no handler found, terminate!\n");
         exit(0);
     }
-        
+       
     header->handlerCount = count;
+    printf("end FTW\n");
+    
 }
 
 
